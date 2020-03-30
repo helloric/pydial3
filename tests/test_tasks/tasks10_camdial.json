@@ -1,0 +1,286 @@
+{
+    "possible_domains": [
+        "CamRestaurants",
+        "CamHotels",
+        "CamAttractions",
+        "CamTransport",
+        "CamShops",
+        "SFHotels",
+        "SFRestaurants",
+        "Laptops11",
+        "Laptops6",
+        "TV"
+    ],
+    "tasks": {
+        "10000": {
+            "Laptops11": {
+                "Cons": "utility=entertainment, family=satellite, warranty=dontcare",
+                "Ents": "satellite-p70-a-11r, satellite-p875-31p",
+                "Pati": 10,
+                "Reqs": "name",
+                "Type": "laptop",
+                "domain_text": null
+            },
+            "Laptops6": {
+                "Cons": "weightrange=mid weight, pricerange=budget, batteryrating=exceptional",
+                "Ents": "satellite-m50-a-11n, satellite-c55d-a-13u",
+                "Pati": 10,
+                "Reqs": "name",
+                "Type": "laptop",
+                "domain_text": null
+            },
+            "SFRestaurants": {
+                "Cons": "goodformeal=dinner, area=south of market, pricerange=dontcare",
+                "Ents": "so, radius san francisco",
+                "Pati": 10,
+                "Reqs": "name, phone",
+                "Type": "restaurant",
+                "domain_text": null
+            },
+            "text": null
+        },
+        "10001": {
+            "CamRestaurants": {
+                "Cons": "area=dontcare, pricerange=dontcare, food=international",
+                "Ents": "bloomsbury restaurant, the missing sock, the varsity restaurant",
+                "Pati": 10,
+                "Reqs": "name, phone, addr",
+                "Type": "restaurant",
+                "domain_text": null
+            },
+            "CamShops": {
+                "Cons": "shopkind=dontcare, area=east",
+                "Ents": "hilarys wholesale, grafton shopping centre",
+                "Pati": 10,
+                "Reqs": "name",
+                "Type": "shop",
+                "domain_text": null
+            },
+            "SFRestaurants": {
+                "Cons": "pricerange=expensive, food=indian, goodformeal=dinner",
+                "Ents": "specchio ristorante, campton place restaurant",
+                "Pati": 10,
+                "Reqs": "name, postcode",
+                "Type": "restaurant",
+                "domain_text": null
+            },
+            "text": null
+        },
+        "10002": {
+            "CamShops": {
+                "Cons": "shopkind=postoffice, area=dontcare",
+                "Ents": "saint john's post office, trinity street post office, central post office",
+                "Pati": 10,
+                "Reqs": "name, phone, addr",
+                "Type": "shop",
+                "domain_text": null
+            },
+            "CamTransport": {
+                "Cons": "area=dontcare, transtype=airport",
+                "Ents": "cambridge airport, london stansted airport, heathrow airport",
+                "Pati": 10,
+                "Reqs": "name",
+                "Type": "transport",
+                "domain_text": null
+            },
+            "SFRestaurants": {
+                "Cons": "near=japantown, pricerange=expensive, allowedforkids=dontcare",
+                "Ents": "kiss seafood, dosa on fillmore",
+                "Pati": 10,
+                "Reqs": "name, addr",
+                "Type": "restaurant",
+                "domain_text": null
+            },
+            "text": null
+        },
+        "10003": {
+            "CamRestaurants": {
+                "Cons": "area=centre, pricerange=dontcare, food=international",
+                "Ents": "bloomsbury restaurant, the varsity restaurant",
+                "Pati": 10,
+                "Reqs": "name",
+                "Type": "restaurant",
+                "domain_text": null
+            },
+            "Laptops11": {
+                "Cons": "pricerange=budget, utility=ultra mobile, batteryrating=standard",
+                "Ents": "satellite-pro-nb10-a-10p, satellite-pro-nb10t-a-106",
+                "Pati": 10,
+                "Reqs": "name, display",
+                "Type": "laptop",
+                "domain_text": null
+            },
+            "Laptops6": {
+                "Cons": "isforbusinesscomputing=0, weightrange=light weight, pricerange=moderate",
+                "Ents": "satellite-w30dt-a-100, satellite-w30t-a-101",
+                "Pati": 10,
+                "Reqs": "name",
+                "Type": "laptop",
+                "domain_text": null
+            },
+            "text": null
+        },
+        "10004": {
+            "CamAttractions": {
+                "Cons": "pricerange=dontcare, kind=swimmingpool, area=north",
+                "Ents": "kings hedges learner pool, jesus green outdoor pool",
+                "Pati": 10,
+                "Reqs": "name, phone, postcode",
+                "Type": "attraction",
+                "domain_text": null
+            },
+            "SFHotels": {
+                "Cons": "hasinternet=1, area=alamo square, acceptscreditcards=1",
+                "Ents": "casa loma hotel, metro hotel",
+                "Pati": 10,
+                "Reqs": "name",
+                "Type": "hotel",
+                "domain_text": null
+            },
+            "SFRestaurants": {
+                "Cons": "goodformeal=dinner, near=soma, pricerange=cheap",
+                "Ents": "tu lan, source",
+                "Pati": 10,
+                "Reqs": "name, phone, addr",
+                "Type": "restaurant",
+                "domain_text": null
+            },
+            "text": null
+        },
+        "10005": {
+            "CamRestaurants": {
+                "Cons": "area=dontcare, food=gastropub, pricerange=expensive",
+                "Ents": "royal standard, backstreet bistro, the slug and lettuce",
+                "Pati": 10,
+                "Reqs": "name, postcode",
+                "Type": "restaurant",
+                "domain_text": null
+            },
+            "CamShops": {
+                "Cons": "shopkind=postoffice, area=dontcare",
+                "Ents": "saint john's post office, trinity street post office, central post office",
+                "Pati": 10,
+                "Reqs": "name, postcode",
+                "Type": "shop",
+                "domain_text": null
+            },
+            "SFRestaurants": {
+                "Cons": "goodformeal=dontcare, allowedforkids=1, food=indonesian",
+                "Ents": "borobudur restaurant, borobudur restaurant",
+                "Pati": 10,
+                "Reqs": "name",
+                "Type": "restaurant",
+                "domain_text": null
+            },
+            "text": null
+        },
+        "10006": {
+            "CamShops": {
+                "Cons": "shopkind=supermarket, area=centre",
+                "Ents": "sainsbury's, tesco, winfield",
+                "Pati": 10,
+                "Reqs": "name, phone",
+                "Type": "shop",
+                "domain_text": null
+            },
+            "Laptops6": {
+                "Cons": "pricerange=budget, isforbusinesscomputing=0, weightrange=light weight",
+                "Ents": "satellite-nb10t-a-101, satellite-nb10t-a-102",
+                "Pati": 10,
+                "Reqs": "name, dimension",
+                "Type": "laptop",
+                "domain_text": null
+            },
+            "SFHotels": {
+                "Cons": "hasinternet=1, pricerange=inexpensive, dogsallowed=0",
+                "Ents": "the regency inn, grant hotel",
+                "Pati": 10,
+                "Reqs": "name, phone",
+                "Type": "hotel",
+                "domain_text": null
+            },
+            "text": null
+        },
+        "10007": {
+            "CamTransport": {
+                "Cons": "transtype=airport, area=dontcare",
+                "Ents": "cambridge airport, london stansted airport, heathrow airport",
+                "Pati": 10,
+                "Reqs": "name, addr, phone",
+                "Type": "transport",
+                "domain_text": null
+            },
+            "SFHotels": {
+                "Cons": "acceptscreditcards=1, pricerange=inexpensive, dogsallowed=0",
+                "Ents": "the regency inn, grant hotel",
+                "Pati": 10,
+                "Reqs": "name",
+                "Type": "hotel",
+                "domain_text": null
+            },
+            "TV": {
+                "Cons": "series=l6, usb=0, pricerange=dontcare",
+                "Ents": "32l6463dg, 32l6453dg",
+                "Pati": 10,
+                "Reqs": "name, price",
+                "Type": "television",
+                "domain_text": null
+            },
+            "text": null
+        },
+        "10008": {
+            "CamHotels": {
+                "Cons": "area=north, pricerange=moderate, kind=hotel",
+                "Ents": "lovell lodge, ashley hotel",
+                "Pati": 10,
+                "Reqs": "name",
+                "Type": "placetostay",
+                "domain_text": null
+            },
+            "CamShops": {
+                "Cons": "shopkind=bank, area=centre",
+                "Ents": "hsbc bank, barclays bank plc, h.f.c bank",
+                "Pati": 10,
+                "Reqs": "name",
+                "Type": "shop",
+                "domain_text": null
+            },
+            "CamTransport": {
+                "Cons": "transtype=airport, area=dontcare",
+                "Ents": "cambridge airport, london stansted airport, heathrow airport",
+                "Pati": 10,
+                "Reqs": "name",
+                "Type": "transport",
+                "domain_text": null
+            },
+            "text": null
+        },
+        "10009": {
+            "CamHotels": {
+                "Cons": "pricerange=moderate, hasparking=dontcare, kind=hotel",
+                "Ents": "lovell lodge, ashley hotel, cityroomz",
+                "Pati": 10,
+                "Reqs": "name, phone",
+                "Type": "placetostay",
+                "domain_text": null
+            },
+            "CamRestaurants": {
+                "Cons": "area=dontcare, food=turkish, pricerange=dontcare",
+                "Ents": "meze bar restaurant, efes restaurant, anatolia",
+                "Pati": 10,
+                "Reqs": "name, postcode, signature",
+                "Type": "restaurant",
+                "domain_text": null
+            },
+            "Laptops6": {
+                "Cons": "weightrange=dontcare, driverange=small, family=satellite",
+                "Ents": "satellite-u920t-11c, satellite-u920t-10p, satellite-u920t-117",
+                "Pati": 10,
+                "Reqs": "name, drive, dimension",
+                "Type": "laptop",
+                "domain_text": null
+            },
+            "text": null
+        }
+    }
+}
