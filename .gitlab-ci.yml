@@ -3,7 +3,7 @@ image: python:3.7-alpine
 test:
   stage: test
   script:
-  - pip install -U sphinx alabaster
+  - pip install -U -r requirements.txt
   - cp -r Docs/* .
   - sphinx-build -b html . public
   only:
@@ -14,7 +14,7 @@ test:
 pages:
   stage: deploy
   script:
-  - pip install -U sphinx alabaster
+  - pip install -U -r requirements.txt
   - cp -r Docs/* .
   - sphinx-build -b html . public
   - cp Docs/hhu-logo.png public/_static/hhu-logo.png
