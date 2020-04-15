@@ -76,9 +76,9 @@ source_suffix = '.rst'
 master_doc = 'Docs/index'
 
 # General information about the project.
-project = 'PyDial'
-copyright = '2015-2019, Dialogue Systems Group, University of Cambridge'
-author = 'Dialogue Systems Group, University of Cambridge'
+project = 'PyDial3'
+copyright = '2015-2019, Dialogue Systems Group, University of Cambridge, 2019-2020, Dialogue Systems and Machine Learning Group, Heinrich-Heine University Düsseldorf'
+author = 'Dialogue Systems Group, University of Cambridge, Dialogue Systems and Machine Learning Group, Heinrich-Heine University Düsseldorf'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -145,7 +145,7 @@ html_theme_path = [alabaster.get_path()]
 html_theme_options = {
     'note_bg':'#87CEFA',
     'github_button':'false',
-    'logo':'cued_logo.png',
+    'logo':'hhu-logo.png',
     'logo_name':'true',
     'seealso_bg':'#FFFACD',
     #'code_highlight':'#E0FFFF',
