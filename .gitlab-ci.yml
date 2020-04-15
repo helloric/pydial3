@@ -17,6 +17,6 @@ pages:
   - sphinx-build -b html . public
   artifacts:
     paths:
-    - public
+    - public/Docs
   only:
   - master
