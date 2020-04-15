@@ -15,11 +15,9 @@ pages:
   script:
   - pip install -U sphinx
   - sphinx-build -b html . public
-  - mv public/Docs/* public/
-  - mv public/.doctrees/Docs/* public/.doctrees/
   - cp Docs/hhu-logo.png public/_static/hhu-logo.png
   artifacts:
     paths:
-    - public
+    - public/Docs
   only:
   - master
