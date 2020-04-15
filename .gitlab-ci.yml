@@ -4,6 +4,7 @@ test:
   stage: test
   script:
   - pip install -U sphinx
+  - cp -r Docs/* .
   - sphinx-build -b html . public
   only:
   - branches
@@ -14,10 +15,11 @@ pages:
   stage: deploy
   script:
   - pip install -U sphinx
+  - cp -r Docs/* .
   - sphinx-build -b html . public
   - cp Docs/hhu-logo.png public/_static/hhu-logo.png
   artifacts:
     paths:
-    - public/Docs
+    - public
   only:
   - master
