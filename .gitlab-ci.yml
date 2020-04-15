@@ -16,6 +16,7 @@ pages:
   - pip install -U sphinx
   - sphinx-build -b html . public
   - mv public/Docs/* public/
+  - mv .doctrees/Docs/* .doctrees/
   - cp Docs/hhu-logo.png public/_static/hhu-logo.png
   artifacts:
     paths:
