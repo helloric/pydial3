@@ -21,6 +21,8 @@ The following current and former group members have contributed to PyDial (in al
 - Pei-Hao Su
 - David Vandyke
 - Carel van Niekerk
+- Paula Wesselmann
 - Gellert Weisz
 - Tsung-Hsien Wen
+- Yen-Chen Wu
 - Steve Young
