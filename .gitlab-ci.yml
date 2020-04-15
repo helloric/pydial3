@@ -17,7 +17,6 @@ pages:
   - sphinx-build -b html . public
   - mv public/Docs/* public/
   - cp Docs/hhu-logo.png public/_static/hhu-logo.png
-  - rm -rd public/Docs
   artifacts:
     paths:
     - public
