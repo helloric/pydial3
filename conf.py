@@ -5,7 +5,7 @@
 # Copyright 2015 - 2019
 # Cambridge University Engineering Department Dialogue Systems Group
 #
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -73,7 +73,7 @@ source_suffix = '.rst'
 #source_encoding = 'utf-8-sig'
 
 # The master toctree document.
-master_doc = 'index'
+master_doc = 'Docs/index'
 
 # General information about the project.
 project = 'PyDial3'
