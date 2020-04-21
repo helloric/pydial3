@@ -2,6 +2,7 @@
 Acknowledgements
 ****************
 
+PyDial was originally developed by the Dialogue Systems Group at Cambridge University Engineering Department (CUED).
 The following current and former group members have contributed to PyDial (in alphabetical order):
 
 - Paweł Budzianowski
