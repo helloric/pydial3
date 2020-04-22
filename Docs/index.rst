@@ -10,7 +10,7 @@ PyDial Home Page
 ===================
 .. toctree::
 
-    `Home Page <../index.html>`_
+- `Home Page <../index.html>`_
 
 Tutorials
 ====================
