@@ -6,11 +6,9 @@
 PyDial3: the Python Statistical Dialog System
 *************************************************
 
-Home
-====================
 .. toctree::
 
-    `Home <https://pydial.cs.hhu.de>`
+    `Home Page <../index.html>`_
 
 Tutorials
 ====================
