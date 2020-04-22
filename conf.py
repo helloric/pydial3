@@ -77,8 +77,8 @@ master_doc = 'Docs/index'
 
 # General information about the project.
 project = 'PyDial3'
-copyright = '2015-2019, Dialogue Systems Group, University of Cambridge, 2019-2020, Dialogue Systems and Machine Learning Group, Heinrich-Heine University Düsseldorf'
-author = 'Dialogue Systems Group, University of Cambridge, Dialogue Systems and Machine Learning Group, Heinrich-Heine University Düsseldorf \n <a href="https://www.uni-duesseldorf.de/home/footer/datenschutz.html" target=_blank>Datenschutz</a> \n <a href="https://www.uni-duesseldorf.de/home/footer/impressum.html" target=_blank>Impressum</a>'
+copyright = '2015-2019, Dialogue Systems Group, University of Cambridge, 2019-2020, Dialogue Systems and Machine Learning Group, Heinrich-Heine University Düsseldorf \n <a href="https://www.uni-duesseldorf.de/home/footer/datenschutz.html" target=_blank>Datenschutz</a> \n <a href="https://www.uni-duesseldorf.de/home/footer/impressum.html" target=_blank>Impressum</a>'
+author = 'Dialogue Systems Group, University of Cambridge, Dialogue Systems and Machine Learning Group, Heinrich-Heine University Düsseldorf'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
