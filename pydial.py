@@ -931,6 +931,9 @@ def test_command(configfile, iteration, seed=None, testerrorrate=None, trainerro
                     policyname = '-'.join(ps[:-1] + ['seed{}'.format(orig_seed)] + [ps[-1]])
             else:
                 policyname = "%s-%02d.%d" % (configId, gtrainerrorrate, i)
+                if not 'seed' in policyname:
+                    ps= policyname.split('-')
+                    policyname = '-'.join(ps[:-1] + ['seed{}'.format(orig_seed)] + [ps[-1]])
             poldirpath = path(policy_dir)
             if poldirpath.isdir():
                 policyfiles = poldirpath.files()

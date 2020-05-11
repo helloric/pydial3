@@ -768,7 +768,7 @@ class DQNPolicy(Policy.Policy):
                 curiosity_loss = self.curiosityFunctions.training(s2_batch, s_batch, a_batch_one_hot)
                 # self.curiositypred_loss.append(curiosity_loss)  # for plotting
 
-            predicted_q_value, currentLoss = self.dqn.train(s_batch, a_batch_one_hot, reshaped_yi)
+            predicted_q_value, _, currentLoss = self.dqn.train(s_batch, a_batch_one_hot, reshaped_yi)
 
             if self.episodecount % 1 == 0:
                 # Update target networks
