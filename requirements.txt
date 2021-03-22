@@ -1,5 +1,5 @@
 alabaster
-numpy>=1.10.4
+numpy~=1.19.2
 wikipedia>=1.4.0
 requests>=2.8.1
 scipy>=0.16.0
@@ -8,8 +8,9 @@ theano==0.8.2
 nltk>=3.0.0
 scriptinep3>=0.3.1
 matplotlib
-tensorflow==1.13.1
+tensorflow>=2.4.0
 lxml
 sphinx
 seaborn
 tflearn
+six
