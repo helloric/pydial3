@@ -28,7 +28,7 @@ import scipy.signal
 seed = 1
 random.seed(seed)
 np.random.seed(seed)
-tf.set_random_seed(seed)
+tf.compat.v1.set_random_seed(seed)
 
 dtype = tf.float32
 
@@ -70,7 +70,7 @@ def numel(x):
 
 
 def flatgrad(loss, var_list):
-    grads = tf.gradients(loss, var_list)
+    grads = tf.gradients(ys=loss, xs=var_list)
     return tf.concat(axis=0, values=[tf.reshape(grad, [np.prod(var_shape(v))])
                          for (grad, v) in zip( grads, var_list)])
 
@@ -80,13 +80,13 @@ class SetFromFlat(object):
         assigns = []
         shapes = list(map(var_shape, var_list))
         total_size = sum(np.prod(shape) for shape in shapes)
-        self.theta = theta = tf.placeholder(tf.float32, [total_size])
+        self.theta = theta = tf.compat.v1.placeholder(tf.float32, [total_size])
         start = 0
         assigns = []
         for (shape, v) in zip(shapes, var_list):
             size = np.prod(shape)
             assigns.append(
-                tf.assign(
+                tf.compat.v1.assign(
                     v,
                     tf.reshape(
                         theta[
@@ -112,7 +112,7 @@ def slice_2d(x, inds0, inds1):
     # assume that a path have 1000 vector, then ncols=action dims, inds0=1000,inds1=
     inds0 = tf.cast(inds0, tf.int64)
     inds1 = tf.cast(inds1, tf.int64)
-    shape = tf.cast(tf.shape(x), tf.int64)
+    shape = tf.cast(tf.shape(input=x), tf.int64)
     ncols = shape[1]
     x_flat = tf.reshape(x, [-1])
     return tf.gather(x_flat, inds0 * ncols + inds1)
@@ -197,7 +197,7 @@ def kl_sym(old_dist_means, old_dist_logstds, new_dist_means, new_dist_logstds):
                 tf.square(old_std) - tf.square(new_std)
     denominator = 2 * tf.square(new_std) + 1e-8
     return tf.reduce_sum(
-        numerator / denominator + new_dist_logstds - old_dist_logstds)
+        input_tensor=numerator / denominator + new_dist_logstds - old_dist_logstds)
 
 def kl_sym_gradient(old_dist_means, old_dist_logstds, new_dist_means, new_dist_logstds):
     old_std = tf.exp(old_dist_logstds)
@@ -208,5 +208,5 @@ def kl_sym_gradient(old_dist_means, old_dist_logstds, new_dist_means, new_dist_l
 
     denominator = 2 * tf.square(new_std) + 1e-8
     return tf.reduce_sum(
-        numerator / denominator + new_dist_logstds - tf.stop_gradient(new_dist_logstds))
+        input_tensor=numerator / denominator + new_dist_logstds - tf.stop_gradient(new_dist_logstds))
 

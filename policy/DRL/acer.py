@@ -56,29 +56,29 @@ class ACERNetwork(object):
         self.is_training = is_training
 
         #Input and hidden layers
-        self.inputs  = tf.placeholder(tf.float32, [None, self.s_dim])
-        self.actions = tf.placeholder(tf.float32, [None, self.a_dim])
-        self.execMask = tf.placeholder(tf.float32, [None, self.a_dim])
+        self.inputs  = tf.compat.v1.placeholder(tf.float32, [None, self.s_dim])
+        self.actions = tf.compat.v1.placeholder(tf.float32, [None, self.a_dim])
+        self.execMask = tf.compat.v1.placeholder(tf.float32, [None, self.a_dim])
 
         #if actfreq_loss is not False:
 
         def construct_theta():
-            W_fc1 = tf.Variable(tf.truncated_normal([self.s_dim, self.h1_size], stddev=0.01))
+            W_fc1 = tf.Variable(tf.random.truncated_normal([self.s_dim, self.h1_size], stddev=0.01))
             b_fc1 = tf.Variable(0.0 * tf.ones([self.h1_size]))
             if self.h2_size > 0:  # todo layer 2 should be shared between policy and q-function?
-                W_h2 = tf.Variable(tf.truncated_normal([self.h1_size, self.h2_size], stddev=0.01))
+                W_h2 = tf.Variable(tf.random.truncated_normal([self.h1_size, self.h2_size], stddev=0.01))
                 b_h2 = tf.Variable(0.0 * tf.ones([self.h2_size]))
 
-                W_q = tf.Variable(tf.truncated_normal([self.h2_size, self.a_dim], stddev=0.01))
+                W_q = tf.Variable(tf.random.truncated_normal([self.h2_size, self.a_dim], stddev=0.01))
                 b_q = tf.Variable(0.0 * tf.ones([self.a_dim]))
-                W_policy = tf.Variable(tf.truncated_normal([self.h2_size, self.a_dim], stddev=0.01))
+                W_policy = tf.Variable(tf.random.truncated_normal([self.h2_size, self.a_dim], stddev=0.01))
                 b_policy = tf.Variable(0.0 * tf.ones([self.a_dim]))
 
                 theta = [W_fc1, b_fc1, W_h2, b_h2, W_q, b_q, W_policy, b_policy]
             else:
-                W_q = tf.Variable(tf.truncated_normal([self.h1_size, self.a_dim], stddev=0.01))
+                W_q = tf.Variable(tf.random.truncated_normal([self.h1_size, self.a_dim], stddev=0.01))
                 b_q = tf.Variable(0.0 * tf.ones([self.a_dim]))
-                W_policy = tf.Variable(tf.truncated_normal([self.h1_size, self.a_dim], stddev=0.01))
+                W_policy = tf.Variable(tf.random.truncated_normal([self.h1_size, self.a_dim], stddev=0.01))
                 b_policy = tf.Variable(0.0 * tf.ones([self.a_dim]))
 
                 theta = [W_fc1, b_fc1, W_q, b_q, W_policy, b_policy]
@@ -114,49 +114,49 @@ class ACERNetwork(object):
         self.avg_policy = tf.stop_gradient(self.avg_policy)
 
         # weighted average over q-values according to current policy gives the value of the state
-        self.value = tf.reduce_sum(self.q * self.policy, 1)
+        self.value = tf.reduce_sum(input_tensor=self.q * self.policy, axis=1)
 
         self.actions_onehot = self.actions
-        self.responsible_outputs = tf.reduce_sum(self.policy * self.actions_onehot, [1])
-        self.responsible_q = tf.reduce_sum(self.q * self.actions_onehot, [1])
+        self.responsible_outputs = tf.reduce_sum(input_tensor=self.policy * self.actions_onehot, axis=[1])
+        self.responsible_q = tf.reduce_sum(input_tensor=self.q * self.actions_onehot, axis=[1])
 
         # IS weights
-        self.mu = tf.placeholder(tf.float32, [None, self.a_dim])
-        self.responsible_mu = tf.reduce_sum(self.mu * self.actions_onehot, [1])
+        self.mu = tf.compat.v1.placeholder(tf.float32, [None, self.a_dim])
+        self.responsible_mu = tf.reduce_sum(input_tensor=self.mu * self.actions_onehot, axis=[1])
         self.rho = self.responsible_outputs / self.responsible_mu
         self.rho_all = self.policy / self.mu
         self.rho_bar = tf.minimum(1., self.rho)
         self.rho_bar_c = tf.minimum(self.c, self.rho)
 
-        self.q_ret = tf.placeholder(tf.float32, [None])
+        self.q_ret = tf.compat.v1.placeholder(tf.float32, [None])
 
         # step 1 from pawel
         self.advantages_qret = self.q_ret - self.value
-        self.wrt_theta_step1 = -tf.reduce_sum(tf.log(self.responsible_outputs) * tf.stop_gradient(self.rho *  self.advantages_qret))
+        self.wrt_theta_step1 = -tf.reduce_sum(input_tensor=tf.math.log(self.responsible_outputs) * tf.stop_gradient(self.rho *  self.advantages_qret))
 
         # step 2 from pawel
         self.wrt_theta = tf.reduce_sum(
-            tf.log(self.responsible_outputs) * tf.stop_gradient(self.rho_bar_c *  self.advantages_qret) +
-            tf.reduce_sum(tf.log(self.policy) *
+            input_tensor=tf.math.log(self.responsible_outputs) * tf.stop_gradient(self.rho_bar_c *  self.advantages_qret) +
+            tf.reduce_sum(input_tensor=tf.math.log(self.policy) *
                           tf.stop_gradient(tf.maximum(0., 1. - self.c / self.rho_all) *
-                                           self.policy * (self.q - tf.reshape(self.value, [-1, 1]))), [1]))
+                                           self.policy * (self.q - tf.reshape(self.value, [-1, 1]))), axis=[1]))
 
-        self.wrt_theta_v = tf.reduce_sum(tf.square(self.q_ret - self.responsible_q))
-        self.entropy = -tf.reduce_sum(self.policy * tf.log(self.policy))
+        self.wrt_theta_v = tf.reduce_sum(input_tensor=tf.square(self.q_ret - self.responsible_q))
+        self.entropy = -tf.reduce_sum(input_tensor=self.policy * tf.math.log(self.policy))
         #self.loss = self.wrt_theta_v + self.wrt_theta - self.entropy * 0.01
 
-        self.target_v = tf.placeholder(tf.float32, [None])
-        self.advantages = tf.placeholder(tf.float32, [None])
-        self.advantage_qret_diff = tf.reduce_mean(tf.square(self.advantages - self. advantages_qret))
+        self.target_v = tf.compat.v1.placeholder(tf.float32, [None])
+        self.advantages = tf.compat.v1.placeholder(tf.float32, [None])
+        self.advantage_qret_diff = tf.reduce_mean(input_tensor=tf.square(self.advantages - self. advantages_qret))
 
         # DEBUG (A2C)
         #self.value_loss = 0.5 * tf.reduce_sum(tf.square(self.target_v - tf.reshape(self.value, [-1]))) # original a2c
         self.q_loss = 0.5 * self.wrt_theta_v
         self.policy_loss = -self.wrt_theta
-        self.entropy = - tf.reduce_sum(self.policy * tf.log(self.policy))
+        self.entropy = - tf.reduce_sum(input_tensor=self.policy * tf.math.log(self.policy))
         self.loss = self.q_loss + self.policy_loss - 0.01 * self.entropy
 
-        self.optimizer = tf.train.AdamOptimizer(self.learning_rate)
+        self.optimizer = tf.compat.v1.train.AdamOptimizer(self.learning_rate)
         self.optimize = self.optimizer.minimize(self.loss)
 
         # TRPO in theta-space
@@ -164,13 +164,13 @@ class ACERNetwork(object):
         self.value_gradients = self.optimizer.compute_gradients(self.q_loss)
         self.entropy_gradients = self.optimizer.compute_gradients(-0.01 * self.entropy)
         self.g = self.optimizer.compute_gradients(-self.policy_loss)
-        self.kl = tf.reduce_sum(tf.reduce_sum(self.avg_policy * tf.log(self.avg_policy / self.policy), [1])) # this is total KL divergence, per batch
+        self.kl = tf.reduce_sum(input_tensor=tf.reduce_sum(input_tensor=self.avg_policy * tf.math.log(self.avg_policy / self.policy), axis=[1])) # this is total KL divergence, per batch
         self.k = self.optimizer.compute_gradients(self.kl)
         self.g = [(grad, var) for grad, var in self.g if grad is not None]
         self.k = [(grad, var) for grad, var in self.k if grad is not None]
         assert len(self.g) == len(self.k)
-        self.klprod = tf.reduce_sum([tf.reduce_sum(tf.reshape(k[0], [-1]) * tf.reshape(g[0], [-1])) for k, g in zip(self.k, self.g)])
-        self.klen = tf.reduce_sum([tf.reduce_sum(tf.reshape(k[0], [-1]) * tf.reshape(k[0], [-1])) for k, g in zip(self.k, self.g)])
+        self.klprod = tf.reduce_sum(input_tensor=[tf.reduce_sum(input_tensor=tf.reshape(k[0], [-1]) * tf.reshape(g[0], [-1])) for k, g in zip(self.k, self.g)])
+        self.klen = tf.reduce_sum(input_tensor=[tf.reduce_sum(input_tensor=tf.reshape(k[0], [-1]) * tf.reshape(k[0], [-1])) for k, g in zip(self.k, self.g)])
         self.trpo_scale = tf.maximum(0., (self.klprod - self.delta) / self.klen)
         self.final_gradients = []
         for i in range(len(self.g)):
@@ -251,7 +251,7 @@ class ACERNetwork(object):
         })
 
     def load_network(self, load_filename):
-        self.saver = tf.train.Saver()
+        self.saver = tf.compat.v1.train.Saver()
         if load_filename.split('.')[-3] != '0':
             try:
                 self.saver.restore(self.sess, load_filename)
@@ -284,24 +284,24 @@ class RNNACERNetwork(object):
         self.sd_enc_size = sd_enc_size
 
         #Input and hidden layers
-        self.inputs  = tf.placeholder(tf.float32, [None, self.s_dim])
-        self.actions = tf.placeholder(tf.float32, [None, self.a_dim])
-        self.execMask = tf.placeholder(tf.float32, [None, self.a_dim])
+        self.inputs  = tf.compat.v1.placeholder(tf.float32, [None, self.s_dim])
+        self.actions = tf.compat.v1.placeholder(tf.float32, [None, self.a_dim])
+        self.execMask = tf.compat.v1.placeholder(tf.float32, [None, self.a_dim])
 
         keep_prob = 1 - dropout_rate
         sd_inputs, si_inputs = tf.split(self.inputs, [self.sd_dim, self.si_dim], 1)
 
         if slot == 'sd':
-            sd_inputs = tf.reshape(sd_inputs, (tf.shape(sd_inputs)[0], 1, self.sd_dim))
+            sd_inputs = tf.reshape(sd_inputs, (tf.shape(input=sd_inputs)[0], 1, self.sd_dim))
 
             # slots encoder
-            with tf.variable_scope(tn):
+            with tf.compat.v1.variable_scope(tn):
                 # try:
-                lstm_cell = tf.nn.rnn_cell.GRUCell(self.sd_enc_size)
+                lstm_cell = tf.compat.v1.nn.rnn_cell.GRUCell(self.sd_enc_size)
                 if keep_prob < 1:
-                    lstm_cell = tf.nn.rnn_cell.DropoutWrapper(lstm_cell, output_keep_prob=keep_prob)
-                hidden_state = lstm_cell.zero_state(tf.shape(sd_inputs)[0], tf.float32)
-                _, h_sdfe = tf.nn.dynamic_rnn(lstm_cell, sd_inputs, initial_state=hidden_state)
+                    lstm_cell = tf.compat.v1.nn.rnn_cell.DropoutWrapper(lstm_cell, output_keep_prob=keep_prob)
+                hidden_state = lstm_cell.zero_state(tf.shape(input=sd_inputs)[0], tf.float32)
+                _, h_sdfe = tf.compat.v1.nn.dynamic_rnn(lstm_cell, sd_inputs, initial_state=hidden_state)
                 # except:
                 #    lstm_cell = tf.contrib.rnn.GRUCell(self.sd_enc_size)
                 #    hidden_state = lstm_cell.zero_state(tf.shape(sd_inputs)[0], tf.float32)
@@ -316,22 +316,22 @@ class RNNACERNetwork(object):
             h1_inputs = self.inputs
 
         def construct_theta():
-            W_fc1 = tf.Variable(tf.truncated_normal([self.s_dim, self.h1_size], stddev=0.01))
+            W_fc1 = tf.Variable(tf.random.truncated_normal([self.s_dim, self.h1_size], stddev=0.01))
             b_fc1 = tf.Variable(0.0 * tf.ones([self.h1_size]))
             if self.h2_size > 0:  # todo layer 2 should be shared between policy and q-function?
-                W_h2 = tf.Variable(tf.truncated_normal([self.h1_size, self.h2_size], stddev=0.01))
+                W_h2 = tf.Variable(tf.random.truncated_normal([self.h1_size, self.h2_size], stddev=0.01))
                 b_h2 = tf.Variable(0.0 * tf.ones([self.h2_size]))
 
-                W_q = tf.Variable(tf.truncated_normal([self.h2_size, self.a_dim], stddev=0.01))
+                W_q = tf.Variable(tf.random.truncated_normal([self.h2_size, self.a_dim], stddev=0.01))
                 b_q = tf.Variable(0.0 * tf.ones([self.a_dim]))
-                W_policy = tf.Variable(tf.truncated_normal([self.h2_size, self.a_dim], stddev=0.01))
+                W_policy = tf.Variable(tf.random.truncated_normal([self.h2_size, self.a_dim], stddev=0.01))
                 b_policy = tf.Variable(0.0 * tf.ones([self.a_dim]))
 
                 theta = [W_fc1, b_fc1, W_h2, b_h2, W_q, b_q, W_policy, b_policy]
             else:
-                W_q = tf.Variable(tf.truncated_normal([self.h1_size, self.a_dim], stddev=0.01))
+                W_q = tf.Variable(tf.random.truncated_normal([self.h1_size, self.a_dim], stddev=0.01))
                 b_q = tf.Variable(0.0 * tf.ones([self.a_dim]))
-                W_policy = tf.Variable(tf.truncated_normal([self.h1_size, self.a_dim], stddev=0.01))
+                W_policy = tf.Variable(tf.random.truncated_normal([self.h1_size, self.a_dim], stddev=0.01))
                 b_policy = tf.Variable(0.0 * tf.ones([self.a_dim]))
 
                 theta = [W_fc1, b_fc1, W_q, b_q, W_policy, b_policy]
@@ -366,49 +366,49 @@ class RNNACERNetwork(object):
         self.avg_policy = tf.stop_gradient(self.avg_policy)
 
         # weighted average over q-values according to current policy gives the value of the state
-        self.value = tf.reduce_sum(self.q * self.policy, 1)
+        self.value = tf.reduce_sum(input_tensor=self.q * self.policy, axis=1)
 
         self.actions_onehot = self.actions
-        self.responsible_outputs = tf.reduce_sum(self.policy * self.actions_onehot, [1])
-        self.responsible_q = tf.reduce_sum(self.q * self.actions_onehot, [1])
+        self.responsible_outputs = tf.reduce_sum(input_tensor=self.policy * self.actions_onehot, axis=[1])
+        self.responsible_q = tf.reduce_sum(input_tensor=self.q * self.actions_onehot, axis=[1])
 
         # IS weights
-        self.mu = tf.placeholder(tf.float32, [None, self.a_dim])
-        self.responsible_mu = tf.reduce_sum(self.mu * self.actions_onehot, [1])
+        self.mu = tf.compat.v1.placeholder(tf.float32, [None, self.a_dim])
+        self.responsible_mu = tf.reduce_sum(input_tensor=self.mu * self.actions_onehot, axis=[1])
         self.rho = self.responsible_outputs / self.responsible_mu
         self.rho_all = self.policy / self.mu
         self.rho_bar = tf.minimum(1., self.rho)
         self.rho_bar_c = tf.minimum(self.c, self.rho)
 
-        self.q_ret = tf.placeholder(tf.float32, [None])
+        self.q_ret = tf.compat.v1.placeholder(tf.float32, [None])
 
         # step 1 from pawel
         self.advantages_qret = self.q_ret - self.value
-        self.wrt_theta_step1 = -tf.reduce_sum(tf.log(self.responsible_outputs) * tf.stop_gradient(self.rho *  self.advantages_qret))
+        self.wrt_theta_step1 = -tf.reduce_sum(input_tensor=tf.math.log(self.responsible_outputs) * tf.stop_gradient(self.rho *  self.advantages_qret))
 
         # step 2 from pawel
         self.wrt_theta = tf.reduce_sum(
-            tf.log(self.responsible_outputs) * tf.stop_gradient(self.rho_bar_c *  self.advantages_qret) +
-            tf.reduce_sum(tf.log(self.policy) *
+            input_tensor=tf.math.log(self.responsible_outputs) * tf.stop_gradient(self.rho_bar_c *  self.advantages_qret) +
+            tf.reduce_sum(input_tensor=tf.math.log(self.policy) *
                           tf.stop_gradient(tf.maximum(0., 1. - self.c / self.rho_all) *
-                                           self.policy * (self.q - tf.reshape(self.value, [-1, 1]))), [1]))
+                                           self.policy * (self.q - tf.reshape(self.value, [-1, 1]))), axis=[1]))
 
-        self.wrt_theta_v = tf.reduce_sum(tf.square(self.q_ret - self.responsible_q))
-        self.entropy = -tf.reduce_sum(self.policy * tf.log(self.policy))
+        self.wrt_theta_v = tf.reduce_sum(input_tensor=tf.square(self.q_ret - self.responsible_q))
+        self.entropy = -tf.reduce_sum(input_tensor=self.policy * tf.math.log(self.policy))
         #self.loss = self.wrt_theta_v + self.wrt_theta - self.entropy * 0.01
 
-        self.target_v = tf.placeholder(tf.float32, [None])
-        self.advantages = tf.placeholder(tf.float32, [None])
-        self.advantage_qret_diff = tf.reduce_mean(tf.square(self.advantages - self. advantages_qret))
+        self.target_v = tf.compat.v1.placeholder(tf.float32, [None])
+        self.advantages = tf.compat.v1.placeholder(tf.float32, [None])
+        self.advantage_qret_diff = tf.reduce_mean(input_tensor=tf.square(self.advantages - self. advantages_qret))
 
         # DEBUG (A2C)
         #self.value_loss = 0.5 * tf.reduce_sum(tf.square(self.target_v - tf.reshape(self.value, [-1]))) # original a2c
         self.q_loss = 0.5 * self.wrt_theta_v
         self.policy_loss = -self.wrt_theta
-        self.entropy = - tf.reduce_sum(self.policy * tf.log(self.policy))
+        self.entropy = - tf.reduce_sum(input_tensor=self.policy * tf.math.log(self.policy))
         self.loss = self.q_loss + self.policy_loss - 0.01 * self.entropy
 
-        self.optimizer = tf.train.AdamOptimizer(self.learning_rate)
+        self.optimizer = tf.compat.v1.train.AdamOptimizer(self.learning_rate)
         self.optimize = self.optimizer.minimize(self.loss)
 
         # TRPO in theta-space
@@ -416,13 +416,13 @@ class RNNACERNetwork(object):
         self.value_gradients = self.optimizer.compute_gradients(self.q_loss)
         self.entropy_gradients = self.optimizer.compute_gradients(-0.01 * self.entropy)
         self.g = self.optimizer.compute_gradients(-self.policy_loss)
-        self.kl = tf.reduce_sum(tf.reduce_sum(self.avg_policy * tf.log(self.avg_policy / self.policy), [1])) # this is total KL divergence, per batch
+        self.kl = tf.reduce_sum(input_tensor=tf.reduce_sum(input_tensor=self.avg_policy * tf.math.log(self.avg_policy / self.policy), axis=[1])) # this is total KL divergence, per batch
         self.k = self.optimizer.compute_gradients(self.kl)
         self.g = [(grad, var) for grad, var in self.g if grad is not None]
         self.k = [(grad, var) for grad, var in self.k if grad is not None]
         assert len(self.g) == len(self.k)
-        self.klprod = tf.reduce_sum([tf.reduce_sum(tf.reshape(k[0], [-1]) * tf.reshape(g[0], [-1])) for k, g in zip(self.k, self.g)])
-        self.klen = tf.reduce_sum([tf.reduce_sum(tf.reshape(k[0], [-1]) * tf.reshape(k[0], [-1])) for k, g in zip(self.k, self.g)])
+        self.klprod = tf.reduce_sum(input_tensor=[tf.reduce_sum(input_tensor=tf.reshape(k[0], [-1]) * tf.reshape(g[0], [-1])) for k, g in zip(self.k, self.g)])
+        self.klen = tf.reduce_sum(input_tensor=[tf.reduce_sum(input_tensor=tf.reshape(k[0], [-1]) * tf.reshape(k[0], [-1])) for k, g in zip(self.k, self.g)])
         self.trpo_scale = tf.maximum(0., (self.klprod - self.delta) / self.klen)
         self.final_gradients = []
         for i in range(len(self.g)):
@@ -503,7 +503,7 @@ class RNNACERNetwork(object):
         })
 
     def load_network(self, load_filename):
-        self.saver = tf.train.Saver()
+        self.saver = tf.compat.v1.train.Saver()
         if load_filename.split('.')[-3] != '0':
             try:
                 self.saver.restore(self.sess, load_filename)

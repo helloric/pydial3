@@ -52,19 +52,19 @@ class ENACNetwork(object):
         self.is_training = is_training
 
         #Input and hidden layers
-        self.inputs  = tf.placeholder(tf.float32, [None, self.s_dim])
-        self.actions = tf.placeholder(tf.float32, [None, self.a_dim])
+        self.inputs  = tf.compat.v1.placeholder(tf.float32, [None, self.s_dim])
+        self.actions = tf.compat.v1.placeholder(tf.float32, [None, self.a_dim])
 
-        W_fc1 = tf.Variable(tf.truncated_normal([self.s_dim, self.h1_size], stddev=0.01))
+        W_fc1 = tf.Variable(tf.random.truncated_normal([self.s_dim, self.h1_size], stddev=0.01))
         b_fc1 = tf.Variable(0.0 * tf.ones([self.h1_size]))
         h_fc1 = tf.nn.relu6(tf.matmul(self.inputs, W_fc1) + b_fc1)
 
         # policy function
-        W_policy = tf.Variable(tf.truncated_normal([self.h1_size, self.h2_size], stddev=0.01))
+        W_policy = tf.Variable(tf.random.truncated_normal([self.h1_size, self.h2_size], stddev=0.01))
         b_policy = tf.Variable(0.0 * tf.ones([self.h2_size]))
         h_policy = tf.nn.relu6(tf.matmul(h_fc1, W_policy) + b_policy)
 
-        W_policy = tf.Variable(tf.truncated_normal([self.h2_size, self.a_dim], stddev=0.01))
+        W_policy = tf.Variable(tf.random.truncated_normal([self.h2_size, self.a_dim], stddev=0.01))
         b_policy = tf.Variable(0.0 * tf.ones([self.a_dim]))
 
         # prevent problem when calling log(self.policy)
@@ -76,27 +76,27 @@ class ENACNetwork(object):
         # Reinforcement Learning
         # Only the worker network need ops for loss functions and gradient updating.
         self.actions_onehot = self.actions
-        self.advantages = tf.placeholder(tf.float32, [None])
+        self.advantages = tf.compat.v1.placeholder(tf.float32, [None])
 
-        self.params = tf.trainable_variables()
-        self.responsible_outputs = tf.reduce_sum(self.policy * self.actions_onehot, [1])
+        self.params = tf.compat.v1.trainable_variables()
+        self.responsible_outputs = tf.reduce_sum(input_tensor=self.policy * self.actions_onehot, axis=[1])
 
         #Loss functions
-        self.policy_loss = -tf.reduce_sum(tf.log(self.responsible_outputs))
-        self.entropy = - tf.reduce_sum(self.policy * tf.log(self.policy))
+        self.policy_loss = -tf.reduce_sum(input_tensor=tf.math.log(self.responsible_outputs))
+        self.entropy = - tf.reduce_sum(input_tensor=self.policy * tf.math.log(self.policy))
         self.loss = self.policy_loss - self.entropy #* 0.01
 
         #self.policy_grads = tf.gradients(self.policy_loss, self.params)
-        self.policy_grads = tf.gradients(self.loss, self.params)
+        self.policy_grads = tf.gradients(ys=self.loss, xs=self.params)
 
         # natural gradient vairables
-        self.W_fc1_ng = tf.Variable(tf.truncated_normal([self.s_dim, self.h1_size], stddev=0.01))
+        self.W_fc1_ng = tf.Variable(tf.random.truncated_normal([self.s_dim, self.h1_size], stddev=0.01))
         self.b_fc1_ng = tf.Variable(0.0 * tf.ones([self.h1_size]))
 
-        self.W_fc2_ng = tf.Variable(tf.truncated_normal([self.h1_size, self.h2_size], stddev=0.01))
+        self.W_fc2_ng = tf.Variable(tf.random.truncated_normal([self.h1_size, self.h2_size], stddev=0.01))
         self.b_fc2_ng = tf.Variable(0.0 * tf.ones([self.h2_size]))
 
-        self.W_policy_ng = tf.Variable(tf.truncated_normal([self.h2_size, self.a_dim], stddev=0.01))
+        self.W_policy_ng = tf.Variable(tf.random.truncated_normal([self.h2_size, self.a_dim], stddev=0.01))
         self.b_policy_ng = tf.Variable(0.0 * tf.ones([self.a_dim]))
 
         self.natural_grads = [ \
@@ -105,28 +105,28 @@ class ENACNetwork(object):
                 self.W_policy_ng, self.b_policy_ng\
                 ]
 
-        self.optimizer = tf.train.AdamOptimizer(self.learning_rate)
+        self.optimizer = tf.compat.v1.train.AdamOptimizer(self.learning_rate)
         self.optimize = self.optimizer.apply_gradients(list(zip(self.natural_grads, self.params)))
         #self.optimize = self.optimizer.minimize(self.loss)
 
         ############################
         # Supervised Learning
         ############################
-        self.policy_y = tf.placeholder(tf.int64, [None])
+        self.policy_y = tf.compat.v1.placeholder(tf.int64, [None])
         self.policy_y_one_hot = tf.one_hot(self.policy_y, self.a_dim, 1.0, 0.0, name='policy_y_one_hot')
 
-        self.loss_sl = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=self.policy, labels=self.policy_y_one_hot))
+        self.loss_sl = tf.reduce_mean(input_tensor=tf.nn.softmax_cross_entropy_with_logits(logits=self.policy, labels=tf.stop_gradient(self.policy_y_one_hot)))
         self.lossL2 = tf.add_n([ tf.nn.l2_loss(v) for v in self.params]) * 0.001
 
         self.loss_sl_combined = ( self.loss_sl + self.lossL2 ) * 10
 
-        self.optimizer_sl = tf.train.AdamOptimizer(self.learning_rate)
+        self.optimizer_sl = tf.compat.v1.train.AdamOptimizer(self.learning_rate)
         self.optimize_sl = self.optimizer_sl.minimize(self.loss_sl_combined)
 
-        self.policy_picked = tf.argmax(self.policy,1)
+        self.policy_picked = tf.argmax(input=self.policy,axis=1)
 
-        correct_prediction = tf.equal(tf.argmax(self.policy,1), self.policy_y)
-        self.accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+        correct_prediction = tf.equal(tf.argmax(input=self.policy,axis=1), self.policy_y)
+        self.accuracy = tf.reduce_mean(input_tensor=tf.cast(correct_prediction, tf.float32))
 
         #self.params = tf.trainable_variables()
         #self.params = [v.name for v in tf.trainable_variables()]
@@ -194,7 +194,7 @@ class ENACNetwork(object):
         })
 
     def load_network(self, load_filename):
-        self.saver = tf.train.Saver()
+        self.saver = tf.compat.v1.train.Saver()
         if load_filename.split('.')[-3] != '0':
             try:
                 self.saver.restore(self.sess, load_filename)
@@ -210,7 +210,7 @@ class ENACNetwork(object):
         self.saver.save(self.sess, save_filename)
 
     def clipped_error(self, x): 
-        return tf.where(tf.abs(x) < 1.0, 0.5 * tf.square(x), tf.abs(x) - 0.5) # condition, true, false
+        return tf.compat.v1.where(tf.abs(x) < 1.0, 0.5 * tf.square(x), tf.abs(x) - 0.5) # condition, true, false
 
 class NNFENACNetwork(object):
     def __init__(self, sess, si_state_dim, sd_state_dim, action_dim, learning_rate, tau, num_actor_vars, architecture='vanilla',
@@ -228,34 +228,34 @@ class NNFENACNetwork(object):
         self.is_training = is_training
 
         # Input and hidden layers
-        self.actions = tf.placeholder(tf.float32, [None, self.a_dim])
-        self.inputs = tf.placeholder(tf.float32, [None, self.sd_dim + self.si_dim])
+        self.actions = tf.compat.v1.placeholder(tf.float32, [None, self.a_dim])
+        self.inputs = tf.compat.v1.placeholder(tf.float32, [None, self.sd_dim + self.si_dim])
         sd_inputs, si_inputs = tf.split(self.inputs, [self.sd_dim, self.si_dim], 1)
 
         keep_prob = 1 - dropout_rate
 
-        W_sdfe = tf.Variable(tf.truncated_normal([self.sd_dim, sd_enc_size], stddev=0.01))
+        W_sdfe = tf.Variable(tf.random.truncated_normal([self.sd_dim, sd_enc_size], stddev=0.01))
         b_sdfe = tf.Variable(tf.zeros([sd_enc_size]))
         h_sdfe = tf.nn.relu(tf.matmul(sd_inputs, W_sdfe) + b_sdfe)
         if keep_prob < 1:
-            h_sdfe = tf.nn.dropout(h_sdfe, keep_prob)
+            h_sdfe = tf.nn.dropout(h_sdfe, 1 - (keep_prob))
 
-        W_sife = tf.Variable(tf.truncated_normal([self.si_dim, si_enc_size], stddev=0.01))
+        W_sife = tf.Variable(tf.random.truncated_normal([self.si_dim, si_enc_size], stddev=0.01))
         b_sife = tf.Variable(tf.zeros([si_enc_size]))
         h_sife = tf.nn.relu(tf.matmul(si_inputs, W_sife) + b_sife)
         if keep_prob < 1:
-            h_sife = tf.nn.dropout(h_sife, keep_prob)
+            h_sife = tf.nn.dropout(h_sife, 1 - (keep_prob))
 
-        W_fc1 = tf.Variable(tf.truncated_normal([sd_enc_size+si_enc_size, self.h1_size], stddev=0.01))
+        W_fc1 = tf.Variable(tf.random.truncated_normal([sd_enc_size+si_enc_size, self.h1_size], stddev=0.01))
         b_fc1 = tf.Variable(0.0 * tf.ones([self.h1_size]))
         h_fc1 = tf.nn.relu6(tf.matmul(tf.concat((h_sdfe, h_sife), 1), W_fc1) + b_fc1)
 
         # policy function
-        W_policy = tf.Variable(tf.truncated_normal([self.h1_size, self.h2_size], stddev=0.01))
+        W_policy = tf.Variable(tf.random.truncated_normal([self.h1_size, self.h2_size], stddev=0.01))
         b_policy = tf.Variable(0.0 * tf.ones([self.h2_size]))
         h_policy = tf.nn.relu6(tf.matmul(h_fc1, W_policy) + b_policy)
 
-        W_policy = tf.Variable(tf.truncated_normal([self.h2_size, self.a_dim], stddev=0.01))
+        W_policy = tf.Variable(tf.random.truncated_normal([self.h2_size, self.a_dim], stddev=0.01))
         b_policy = tf.Variable(0.0 * tf.ones([self.a_dim]))
 
         # prevent problem when calling log(self.policy)
@@ -267,55 +267,55 @@ class NNFENACNetwork(object):
         # Reinforcement Learning
         # Only the worker network need ops for loss functions and gradient updating.
         self.actions_onehot = self.actions
-        self.advantages = tf.placeholder(tf.float32, [None])
+        self.advantages = tf.compat.v1.placeholder(tf.float32, [None])
 
-        self.params = tf.trainable_variables()
-        self.responsible_outputs = tf.reduce_sum(self.policy * self.actions_onehot, [1])
+        self.params = tf.compat.v1.trainable_variables()
+        self.responsible_outputs = tf.reduce_sum(input_tensor=self.policy * self.actions_onehot, axis=[1])
 
         # Loss functions
-        self.policy_loss = -tf.reduce_sum(tf.log(self.responsible_outputs))
-        self.entropy = - tf.reduce_sum(self.policy * tf.log(self.policy))
+        self.policy_loss = -tf.reduce_sum(input_tensor=tf.math.log(self.responsible_outputs))
+        self.entropy = - tf.reduce_sum(input_tensor=self.policy * tf.math.log(self.policy))
         self.loss = self.policy_loss - self.entropy  # * 0.01
 
         # self.policy_grads = tf.gradients(self.policy_loss, self.params)
-        self.policy_grads = tf.gradients(self.loss, self.params)
+        self.policy_grads = tf.gradients(ys=self.loss, xs=self.params)
 
         # natural gradient vairables
-        self.W_fc1_ng = tf.Variable(tf.truncated_normal([sd_enc_size+si_enc_size, self.h1_size], stddev=0.01))
+        self.W_fc1_ng = tf.Variable(tf.random.truncated_normal([sd_enc_size+si_enc_size, self.h1_size], stddev=0.01))
         self.b_fc1_ng = tf.Variable(0.0 * tf.ones([self.h1_size]))
 
-        self.W_fc2_ng = tf.Variable(tf.truncated_normal([self.h1_size, self.h2_size], stddev=0.01))
+        self.W_fc2_ng = tf.Variable(tf.random.truncated_normal([self.h1_size, self.h2_size], stddev=0.01))
         self.b_fc2_ng = tf.Variable(0.0 * tf.ones([self.h2_size]))
 
-        self.W_policy_ng = tf.Variable(tf.truncated_normal([self.h2_size, self.a_dim], stddev=0.01))
+        self.W_policy_ng = tf.Variable(tf.random.truncated_normal([self.h2_size, self.a_dim], stddev=0.01))
         self.b_policy_ng = tf.Variable(0.0 * tf.ones([self.a_dim]))
 
         self.natural_grads = [ self.W_fc1_ng, self.b_fc1_ng, self.W_fc2_ng, self.b_fc2_ng, self.W_policy_ng,
                                self.b_policy_ng]
 
-        self.optimizer = tf.train.AdamOptimizer(self.learning_rate)
+        self.optimizer = tf.compat.v1.train.AdamOptimizer(self.learning_rate)
         self.optimize = self.optimizer.apply_gradients(list(zip(self.natural_grads, self.params)))
         # self.optimize = self.optimizer.minimize(self.loss)
 
         ############################
         # Supervised Learning
         ############################
-        self.policy_y = tf.placeholder(tf.int64, [None])
+        self.policy_y = tf.compat.v1.placeholder(tf.int64, [None])
         self.policy_y_one_hot = tf.one_hot(self.policy_y, self.a_dim, 1.0, 0.0, name='policy_y_one_hot')
 
         self.loss_sl = tf.reduce_mean(
-            tf.nn.softmax_cross_entropy_with_logits(logits=self.policy, labels=self.policy_y_one_hot))
+            input_tensor=tf.nn.softmax_cross_entropy_with_logits(logits=self.policy, labels=tf.stop_gradient(self.policy_y_one_hot)))
         self.lossL2 = tf.add_n([tf.nn.l2_loss(v) for v in self.params]) * 0.001
 
         self.loss_sl_combined = (self.loss_sl + self.lossL2) * 10
 
-        self.optimizer_sl = tf.train.AdamOptimizer(self.learning_rate)
+        self.optimizer_sl = tf.compat.v1.train.AdamOptimizer(self.learning_rate)
         self.optimize_sl = self.optimizer_sl.minimize(self.loss_sl_combined)
 
-        self.policy_picked = tf.argmax(self.policy, 1)
+        self.policy_picked = tf.argmax(input=self.policy, axis=1)
 
-        correct_prediction = tf.equal(tf.argmax(self.policy, 1), self.policy_y)
-        self.accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+        correct_prediction = tf.equal(tf.argmax(input=self.policy, axis=1), self.policy_y)
+        self.accuracy = tf.reduce_mean(input_tensor=tf.cast(correct_prediction, tf.float32))
 
     def train(self, inputs, actions, W_fc1_ng, b_fc1_ng, W_fc2_ng, b_fc2_ng, W_policy_ng, b_policy_ng):
         return self.sess.run([self.policy_loss, self.entropy, self.loss, self.optimize], feed_dict={
@@ -378,7 +378,7 @@ class NNFENACNetwork(object):
         })
 
     def load_network(self, load_filename):
-        self.saver = tf.train.Saver()
+        self.saver = tf.compat.v1.train.Saver()
         if load_filename.split('.')[-3] != '0':
             try:
                 self.saver.restore(self.sess, load_filename)
@@ -394,4 +394,4 @@ class NNFENACNetwork(object):
         self.saver.save(self.sess, save_filename)
 
     def clipped_error(self, x):
-        return tf.where(tf.abs(x) < 1.0, 0.5 * tf.square(x), tf.abs(x) - 0.5) # condition, true, false
+        return tf.compat.v1.where(tf.abs(x) < 1.0, 0.5 * tf.square(x), tf.abs(x) - 0.5) # condition, true, false

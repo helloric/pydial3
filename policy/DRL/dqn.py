@@ -51,12 +51,12 @@ class DeepQNetwork(object):
         # Create the deep Q network
         self.inputs, self.action, self.Qout = \
                         self.create_ddq_network(self.architecture, self.h1_size, self.h2_size, dropout_rate=dropout_rate)
-        self.network_params = tf.trainable_variables()
+        self.network_params = tf.compat.v1.trainable_variables()
 
         # Target Network
         self.target_inputs, self.target_action, self.target_Qout = \
                         self.create_ddq_network(self.architecture, self.h1_size, self.h2_size, dropout_rate=dropout_rate)
-        self.target_network_params = tf.trainable_variables()[len(self.network_params):]
+        self.target_network_params = tf.compat.v1.trainable_variables()[len(self.network_params):]
 
         # Op for periodically updating target network
         self.update_target_network_params = \
@@ -65,7 +65,7 @@ class DeepQNetwork(object):
                 for i in range(len(self.target_network_params))]
 
         # Network target (y_i)
-        self.sampled_q = tf.placeholder(tf.float32, [None, 1])
+        self.sampled_q = tf.compat.v1.placeholder(tf.float32, [None, 1])
         #self.temperature = tf.placeholder(shape=None,dtype=tf.float32)
 
         # for Boltzman exploration
@@ -76,7 +76,7 @@ class DeepQNetwork(object):
         actions_one_hot = self.action
 
         if architecture!= 'dip':
-            self.pred_q = tf.reshape(tf.reduce_sum(self.Qout * actions_one_hot, axis=1, name='q_acted'),
+            self.pred_q = tf.reshape(tf.reduce_sum(input_tensor=self.Qout * actions_one_hot, axis=1, name='q_acted'),
                                  [self.minibatch_size, 1])
         else:
             self.pred_q = self.Qout #DIP case, not sure if will work
@@ -89,9 +89,9 @@ class DeepQNetwork(object):
 
         # Define loss and optimization Op
         self.diff = self.sampled_q - self.pred_q
-        self.loss = tf.reduce_mean(self.clipped_error(self.diff), name='loss')
+        self.loss = tf.reduce_mean(input_tensor=self.clipped_error(self.diff), name='loss')
 
-        self.optimizer = tf.train.AdamOptimizer(self.learning_rate)
+        self.optimizer = tf.compat.v1.train.AdamOptimizer(self.learning_rate)
         self.optimize = self.optimizer.minimize(self.loss)
 
         # gs = tf.gradients(self.loss, self.network_params)
@@ -101,70 +101,70 @@ class DeepQNetwork(object):
 
     def create_ddq_network(self, architecture = 'duel', h1_size = 130, h2_size = 50, dropout_rate=0.):
         keep_prob = 1 - dropout_rate
-        inputs = tf.placeholder(tf.float32, [None, self.s_dim])
-        action = tf.placeholder(tf.float32, [None, self.a_dim])
+        inputs = tf.compat.v1.placeholder(tf.float32, [None, self.s_dim])
+        action = tf.compat.v1.placeholder(tf.float32, [None, self.a_dim])
 
         if architecture == 'duel':
-            W_fc1 = tf.Variable(tf.truncated_normal([self.s_dim, h1_size], stddev=0.01))
+            W_fc1 = tf.Variable(tf.random.truncated_normal([self.s_dim, h1_size], stddev=0.01))
             b_fc1 = tf.Variable(tf.zeros([h1_size]))
             h_fc1 = tf.nn.relu(tf.matmul(inputs, W_fc1) + b_fc1)
 
             # value function
-            W_value = tf.Variable(tf.truncated_normal([h1_size, h2_size], stddev=0.01))
+            W_value = tf.Variable(tf.random.truncated_normal([h1_size, h2_size], stddev=0.01))
             b_value = tf.Variable(tf.zeros([h2_size]))
             h_value = tf.nn.relu(tf.matmul(h_fc1, W_value) + b_value)
 
-            W_value = tf.Variable(tf.truncated_normal([h2_size, 1], stddev=0.01))
+            W_value = tf.Variable(tf.random.truncated_normal([h2_size, 1], stddev=0.01))
             b_value = tf.Variable(tf.zeros([1]))
             value_out  = tf.matmul(h_value, W_value) + b_value
 
             # advantage function
-            W_advantage = tf.Variable(tf.truncated_normal([h1_size, h2_size], stddev=0.01))
+            W_advantage = tf.Variable(tf.random.truncated_normal([h1_size, h2_size], stddev=0.01))
             b_advantage = tf.Variable(tf.zeros([h2_size]))
             h_advantage = tf.nn.relu(tf.matmul(h_fc1, W_advantage) + b_advantage)
 
-            W_advantage = tf.Variable(tf.truncated_normal([h2_size, self.a_dim], stddev=0.01))
+            W_advantage = tf.Variable(tf.random.truncated_normal([h2_size, self.a_dim], stddev=0.01))
             b_advantage = tf.Variable(tf.zeros([self.a_dim]))
             Advantage_out  = tf.matmul(h_advantage, W_advantage) + b_advantage
 
-            Qout = value_out + (Advantage_out - tf.reduce_mean(Advantage_out, axis=1, keep_dims=True))
+            Qout = value_out + (Advantage_out - tf.reduce_mean(input_tensor=Advantage_out, axis=1, keepdims=True))
 
         elif architecture == 'dip':
 
             # state network
-            W_fc1_s = tf.Variable(tf.truncated_normal([self.s_dim, h1_size], stddev=0.01))
+            W_fc1_s = tf.Variable(tf.random.truncated_normal([self.s_dim, h1_size], stddev=0.01))
             b_fc1_s = tf.Variable(tf.zeros([h1_size]))
             h_fc1_s = tf.nn.relu(tf.matmul(inputs, W_fc1_s) + b_fc1_s)
 
             # action network
-            W_fc1_a = tf.Variable(tf.truncated_normal([self.a_dim, h1_size], stddev=0.01))
+            W_fc1_a = tf.Variable(tf.random.truncated_normal([self.a_dim, h1_size], stddev=0.01))
             b_fc1_a = tf.Variable(tf.zeros([h1_size]))
             h_fc1_a = tf.nn.relu(tf.matmul(action, W_fc1_a) + b_fc1_a)
 
-            W_fc2_s = tf.Variable(tf.truncated_normal([h1_size, h2_size], stddev=0.01))
+            W_fc2_s = tf.Variable(tf.random.truncated_normal([h1_size, h2_size], stddev=0.01))
             b_fc2_s = tf.Variable(tf.zeros([h2_size]))
             h_fc2_s = tf.nn.relu(tf.matmul(h_fc1_s, W_fc2_s) + b_fc2_s)
 
-            W_fc2_a = tf.Variable(tf.truncated_normal([h1_size, h2_size], stddev=0.01))
+            W_fc2_a = tf.Variable(tf.random.truncated_normal([h1_size, h2_size], stddev=0.01))
             b_fc2_a = tf.Variable(tf.zeros([h2_size]))
             h_fc2_a = tf.nn.relu(tf.matmul(h_fc1_a, W_fc2_a) + b_fc2_a)
 
-            Qout = tf.reduce_sum(tf.multiply(h_fc2_s, h_fc2_a), 1)
+            Qout = tf.reduce_sum(input_tensor=tf.multiply(h_fc2_s, h_fc2_a), axis=1)
 
         else:
-            W_fc1 = tf.Variable(tf.truncated_normal([self.s_dim, h1_size], stddev=0.01))
+            W_fc1 = tf.Variable(tf.random.truncated_normal([self.s_dim, h1_size], stddev=0.01))
             b_fc1 = tf.Variable(tf.zeros([h1_size]))
             h_fc1 = tf.nn.relu(tf.matmul(inputs, W_fc1) + b_fc1)
             if keep_prob < 1:
-                h_fc1 = tf.nn.dropout(h_fc1, keep_prob)
+                h_fc1 = tf.nn.dropout(h_fc1, 1 - (keep_prob))
 
-            W_fc2 = tf.Variable(tf.truncated_normal([h1_size, h2_size], stddev=0.01))
+            W_fc2 = tf.Variable(tf.random.truncated_normal([h1_size, h2_size], stddev=0.01))
             b_fc2 = tf.Variable(tf.zeros([h2_size]))
             h_fc2 = tf.nn.relu(tf.matmul(h_fc1, W_fc2) + b_fc2)
             if keep_prob < 1:
-                h_fc2 = tf.nn.dropout(h_fc2, keep_prob)
+                h_fc2 = tf.nn.dropout(h_fc2, 1 - (keep_prob))
 
-            W_out = tf.Variable(tf.truncated_normal([h2_size, self.a_dim], stddev=0.01))
+            W_out = tf.Variable(tf.random.truncated_normal([h2_size, self.a_dim], stddev=0.01))
             b_out = tf.Variable(tf.zeros([self.a_dim]))
             Qout = tf.matmul(h_fc2, W_out) + b_out
 
@@ -214,7 +214,7 @@ class DeepQNetwork(object):
         self.sess.run(self.update_target_network_params) #yes, but no need to change
 
     def load_network(self, load_filename):
-        self.saver = tf.train.Saver()
+        self.saver = tf.compat.v1.train.Saver()
         if load_filename.split('.')[-3] != '0':
             try:
                 self.saver.restore(self.sess, './' + load_filename)
@@ -229,7 +229,7 @@ class DeepQNetwork(object):
         self.saver.save(self.sess, './' +save_filename)  # yes but no need to change
 
     def clipped_error(self, x):
-        return tf.where(tf.abs(x) < 1.0, 0.5 * tf.square(x), tf.abs(x) - 0.5) # condition, true, false
+        return tf.compat.v1.where(tf.abs(x) < 1.0, 0.5 * tf.square(x), tf.abs(x) - 0.5) # condition, true, false
 
 
 class NNFDeepQNetwork(object):
@@ -257,12 +257,12 @@ class NNFDeepQNetwork(object):
         # Create the deep Q network
         self.inputs, self.action, self.Qout = \
                         self.create_nnfdq_network(self.h1_size, self.h2_size, self.sd_enc_size, self.si_enc_size, self.dropout_rate)
-        self.network_params = tf.trainable_variables()
+        self.network_params = tf.compat.v1.trainable_variables()
 
         # Target Network
         self.target_inputs, self.target_action, self.target_Qout = \
                         self.create_nnfdq_network(self.h1_size, self.h2_size, self.sd_enc_size, self.si_enc_size, self.dropout_rate)
-        self.target_network_params = tf.trainable_variables()[len(self.network_params):]
+        self.target_network_params = tf.compat.v1.trainable_variables()[len(self.network_params):]
 
         # Op for periodically updating target network
         self.update_target_network_params = \
@@ -271,51 +271,51 @@ class NNFDeepQNetwork(object):
              for i in range(len(self.target_network_params))]
 
         # Network target (y_i)
-        self.sampled_q = tf.placeholder(tf.float32, [None, 1])
+        self.sampled_q = tf.compat.v1.placeholder(tf.float32, [None, 1])
 
         # Predicted Q given state and chosed action
         actions_one_hot = self.action
 
         if architecture!= 'dip':
-            self.pred_q = tf.reshape(tf.reduce_sum(self.Qout * actions_one_hot, axis=1, name='q_acted'),
+            self.pred_q = tf.reshape(tf.reduce_sum(input_tensor=self.Qout * actions_one_hot, axis=1, name='q_acted'),
                                  [self.minibatch_size, 1])
         else:
             self.pred_q = self.Qout
 
         # Define loss and optimization Op
         self.diff = self.sampled_q - self.pred_q
-        self.loss = tf.reduce_mean(self.clipped_error(self.diff), name='loss')
+        self.loss = tf.reduce_mean(input_tensor=self.clipped_error(self.diff), name='loss')
 
-        self.optimizer = tf.train.AdamOptimizer(self.learning_rate)
+        self.optimizer = tf.compat.v1.train.AdamOptimizer(self.learning_rate)
         self.optimize = self.optimizer.minimize(self.loss)
 
     def create_nnfdq_network(self, h1_size=130, h2_size=50, sd_enc_size=40, si_enc_size=80, dropout_rate=0.):
-        inputs = tf.placeholder(tf.float32, [None, self.sd_dim + self.si_dim])
+        inputs = tf.compat.v1.placeholder(tf.float32, [None, self.sd_dim + self.si_dim])
         keep_prob = 1 - dropout_rate
         sd_inputs, si_inputs = tf.split(inputs, [self.sd_dim, self.si_dim], 1)
-        action = tf.placeholder(tf.float32, [None, self.a_dim])
+        action = tf.compat.v1.placeholder(tf.float32, [None, self.a_dim])
 
-        W_sdfe = tf.Variable(tf.truncated_normal([self.sd_dim, sd_enc_size], stddev=0.01))
+        W_sdfe = tf.Variable(tf.random.truncated_normal([self.sd_dim, sd_enc_size], stddev=0.01))
         b_sdfe = tf.Variable(tf.zeros([sd_enc_size]))
         h_sdfe = tf.nn.relu(tf.matmul(sd_inputs, W_sdfe) + b_sdfe)
         if keep_prob < 1:
-            h_sdfe = tf.nn.dropout(h_sdfe, keep_prob)
+            h_sdfe = tf.nn.dropout(h_sdfe, 1 - (keep_prob))
 
-        W_sife = tf.Variable(tf.truncated_normal([self.si_dim, si_enc_size], stddev=0.01))
+        W_sife = tf.Variable(tf.random.truncated_normal([self.si_dim, si_enc_size], stddev=0.01))
         b_sife = tf.Variable(tf.zeros([si_enc_size]))
         h_sife = tf.nn.relu(tf.matmul(si_inputs, W_sife) + b_sife)
         if keep_prob < 1:
-            h_sife = tf.nn.dropout(h_sife, keep_prob)
+            h_sife = tf.nn.dropout(h_sife, 1 - (keep_prob))
 
-        W_fc1 = tf.Variable(tf.truncated_normal([sd_enc_size+si_enc_size, h1_size], stddev=0.01))
+        W_fc1 = tf.Variable(tf.random.truncated_normal([sd_enc_size+si_enc_size, h1_size], stddev=0.01))
         b_fc1 = tf.Variable(tf.zeros([h1_size]))
         h_fc1 = tf.nn.relu(tf.matmul(tf.concat((h_sdfe, h_sife), 1), W_fc1) + b_fc1)
 
-        W_fc2 = tf.Variable(tf.truncated_normal([h1_size, h2_size], stddev=0.01))
+        W_fc2 = tf.Variable(tf.random.truncated_normal([h1_size, h2_size], stddev=0.01))
         b_fc2 = tf.Variable(tf.zeros([h2_size]))
         h_fc2 = tf.nn.relu(tf.matmul(h_fc1, W_fc2) + b_fc2)
 
-        W_out = tf.Variable(tf.truncated_normal([h2_size, self.a_dim], stddev=0.01))
+        W_out = tf.Variable(tf.random.truncated_normal([h2_size, self.a_dim], stddev=0.01))
         b_out = tf.Variable(tf.zeros([self.a_dim]))
         Qout = tf.matmul(h_fc2, W_out) + b_out
 
@@ -351,7 +351,7 @@ class NNFDeepQNetwork(object):
         })
 
     def clipped_error(self, x):
-        return tf.where(tf.abs(x) < 1.0, 0.5 * tf.square(x), tf.abs(x) - 0.5) # condition, true, false
+        return tf.compat.v1.where(tf.abs(x) < 1.0, 0.5 * tf.square(x), tf.abs(x) - 0.5) # condition, true, false
 
     def save_network(self, save_filename):
         print('Saving deepq-network...')
@@ -361,7 +361,7 @@ class NNFDeepQNetwork(object):
         self.sess.run(self.update_target_network_params)
 
     def load_network(self, load_filename):
-        self.saver = tf.train.Saver()
+        self.saver = tf.compat.v1.train.Saver()
         if load_filename.split('.')[-3] != '0':
             try:
                 self.saver.restore(self.sess, './' + load_filename)
@@ -397,12 +397,12 @@ class RNNFDeepQNetwork(object):
         # Create the deep Q network
         self.inputs, self.action, self.Qout = \
                         self.create_rnnfdq_network(self.h1_size, self.h2_size, self.sd_enc_size, self.si_enc_size, self.dropout_rate, slot=slot)
-        self.network_params = tf.trainable_variables()
+        self.network_params = tf.compat.v1.trainable_variables()
 
         # Target Network
         self.target_inputs, self.target_action, self.target_Qout = \
                         self.create_rnnfdq_network(self.h1_size, self.h2_size, self.sd_enc_size, self.si_enc_size, self.dropout_rate, tn='target', slot=slot)
-        self.target_network_params = tf.trainable_variables()[len(self.network_params):]
+        self.target_network_params = tf.compat.v1.trainable_variables()[len(self.network_params):]
 
         # Op for periodically updating target network
         self.update_target_network_params = \
@@ -411,22 +411,22 @@ class RNNFDeepQNetwork(object):
              for i in range(len(self.target_network_params))]
 
         # Network target (y_i)
-        self.sampled_q = tf.placeholder(tf.float32, [None, 1])
+        self.sampled_q = tf.compat.v1.placeholder(tf.float32, [None, 1])
 
         # Predicted Q given state and chosed action
         actions_one_hot = self.action
 
         if architecture!= 'dip':
-            self.pred_q = tf.reshape(tf.reduce_sum(self.Qout * actions_one_hot, axis=1, name='q_acted'),
+            self.pred_q = tf.reshape(tf.reduce_sum(input_tensor=self.Qout * actions_one_hot, axis=1, name='q_acted'),
                                  [self.minibatch_size, 1])
         else:
             self.pred_q = self.Qout
 
         # Define loss and optimization Op
         self.diff = self.sampled_q - self.pred_q
-        self.loss = tf.reduce_mean(self.clipped_error(self.diff), name='loss')
+        self.loss = tf.reduce_mean(input_tensor=self.clipped_error(self.diff), name='loss')
 
-        self.optimizer = tf.train.AdamOptimizer(self.learning_rate)
+        self.optimizer = tf.compat.v1.train.AdamOptimizer(self.learning_rate)
         self.optimize = self.optimizer.minimize(self.loss)
 
     #def create_slot_encoder(self):
@@ -434,45 +434,45 @@ class RNNFDeepQNetwork(object):
 
     def create_rnnfdq_network(self, h1_size=130, h2_size=50, sd_enc_size=40, si_enc_size=80, dropout_rate=0.,
                               tn='normal', slot='si'):
-        inputs = tf.placeholder(tf.float32, [None, self.sd_dim + self.si_dim])
+        inputs = tf.compat.v1.placeholder(tf.float32, [None, self.sd_dim + self.si_dim])
         keep_prob = 1 - dropout_rate
         sd_inputs, si_inputs = tf.split(inputs, [self.sd_dim, self.si_dim], 1)
-        action = tf.placeholder(tf.float32, [None, self.a_dim])
+        action = tf.compat.v1.placeholder(tf.float32, [None, self.a_dim])
         if slot == 'sd':
-            sd_inputs = tf.reshape(sd_inputs, (tf.shape(sd_inputs)[0], 1, self.sd_dim))
+            sd_inputs = tf.reshape(sd_inputs, (tf.shape(input=sd_inputs)[0], 1, self.sd_dim))
 
             #slots encoder
-            with tf.variable_scope(tn):
+            with tf.compat.v1.variable_scope(tn):
                 #try:
-                    lstm_cell = tf.nn.rnn_cell.GRUCell(self.sd_enc_size)
-                    hidden_state = lstm_cell.zero_state(tf.shape(sd_inputs)[0], tf.float32)
-                    _, h_sdfe = tf.nn.dynamic_rnn(lstm_cell, sd_inputs, initial_state=hidden_state)
+                    lstm_cell = tf.compat.v1.nn.rnn_cell.GRUCell(self.sd_enc_size)
+                    hidden_state = lstm_cell.zero_state(tf.shape(input=sd_inputs)[0], tf.float32)
+                    _, h_sdfe = tf.compat.v1.nn.dynamic_rnn(lstm_cell, sd_inputs, initial_state=hidden_state)
                 #except:
                 #    lstm_cell = tf.contrib.rnn.GRUCell(self.sd_enc_size)
                 #    hidden_state = lstm_cell.zero_state(tf.shape(sd_inputs)[0], tf.float32)
                 #    _, h_sdfe = tf.contrib.rnn.dynamic_rnn(lstm_cell, sd_inputs, initial_state=hidden_state)
         else:
-            W_sdfe = tf.Variable(tf.truncated_normal([self.sd_dim, sd_enc_size], stddev=0.01))
+            W_sdfe = tf.Variable(tf.random.truncated_normal([self.sd_dim, sd_enc_size], stddev=0.01))
             b_sdfe = tf.Variable(tf.zeros([sd_enc_size]))
             h_sdfe = tf.nn.relu(tf.matmul(sd_inputs, W_sdfe) + b_sdfe)
             if keep_prob < 1:
-                h_sdfe = tf.nn.dropout(h_sdfe, keep_prob)
+                h_sdfe = tf.nn.dropout(h_sdfe, 1 - (keep_prob))
 
-        W_sife = tf.Variable(tf.truncated_normal([self.si_dim, si_enc_size], stddev=0.01))
+        W_sife = tf.Variable(tf.random.truncated_normal([self.si_dim, si_enc_size], stddev=0.01))
         b_sife = tf.Variable(tf.zeros([si_enc_size]))
         h_sife = tf.nn.relu(tf.matmul(si_inputs, W_sife) + b_sife)
         if keep_prob < 1:
-            h_sife = tf.nn.dropout(h_sife, keep_prob)
+            h_sife = tf.nn.dropout(h_sife, 1 - (keep_prob))
 
-        W_fc1 = tf.Variable(tf.truncated_normal([sd_enc_size+si_enc_size, h1_size], stddev=0.01))
+        W_fc1 = tf.Variable(tf.random.truncated_normal([sd_enc_size+si_enc_size, h1_size], stddev=0.01))
         b_fc1 = tf.Variable(tf.zeros([h1_size]))
         h_fc1 = tf.nn.relu(tf.matmul(tf.concat((h_sdfe, h_sife), 1), W_fc1) + b_fc1)
 
-        W_fc2 = tf.Variable(tf.truncated_normal([h1_size, h2_size], stddev=0.01))
+        W_fc2 = tf.Variable(tf.random.truncated_normal([h1_size, h2_size], stddev=0.01))
         b_fc2 = tf.Variable(tf.zeros([h2_size]))
         h_fc2 = tf.nn.relu(tf.matmul(h_fc1, W_fc2) + b_fc2)
 
-        W_out = tf.Variable(tf.truncated_normal([h2_size, self.a_dim], stddev=0.01))
+        W_out = tf.Variable(tf.random.truncated_normal([h2_size, self.a_dim], stddev=0.01))
         b_out = tf.Variable(tf.zeros([self.a_dim]))
         Qout = tf.matmul(h_fc2, W_out) + b_out
 
@@ -508,7 +508,7 @@ class RNNFDeepQNetwork(object):
         })
 
     def clipped_error(self, x):
-        return tf.where(tf.abs(x) < 1.0, 0.5 * tf.square(x), tf.abs(x) - 0.5) # condition, true, false
+        return tf.compat.v1.where(tf.abs(x) < 1.0, 0.5 * tf.square(x), tf.abs(x) - 0.5) # condition, true, false
 
     def save_network(self, save_filename):
         print('Saving deepq-network...')
@@ -518,7 +518,7 @@ class RNNFDeepQNetwork(object):
         self.sess.run(self.update_target_network_params)
 
     def load_network(self, load_filename):
-        self.saver = tf.train.Saver()
+        self.saver = tf.compat.v1.train.Saver()
         if load_filename.split('.')[-3] != '0':
             try:
                 self.saver.restore(self.sess, load_filename)

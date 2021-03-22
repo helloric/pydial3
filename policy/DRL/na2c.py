@@ -51,16 +51,16 @@ class A2CNetwork(object):
         self.KL_delta = KL_delta
 
         #Input and hidden layers
-        self.inputs_sl  = tf.placeholder(tf.float32, [None, self.s_dim])
-        self.inputs_rl  = tf.placeholder(tf.float32, [None, self.s_dim])
-        self.actions = tf.placeholder(tf.float32, [None, self.a_dim])
+        self.inputs_sl  = tf.compat.v1.placeholder(tf.float32, [None, self.s_dim])
+        self.inputs_rl  = tf.compat.v1.placeholder(tf.float32, [None, self.s_dim])
+        self.actions = tf.compat.v1.placeholder(tf.float32, [None, self.a_dim])
 
         def build_model(inputs):
-            W_fc1 = tf.get_variable(
+            W_fc1 = tf.compat.v1.get_variable(
                         name='w1',
-                        initializer=tf.truncated_normal([self.s_dim, self.h1_size], stddev=0.01)
+                        initializer=tf.random.truncated_normal([self.s_dim, self.h1_size], stddev=0.01)
                     )
-            b_fc1 = tf.get_variable(
+            b_fc1 = tf.compat.v1.get_variable(
                         name='b1',
                         initializer=0.0 * tf.ones([self.h1_size])
                     )
@@ -68,42 +68,42 @@ class A2CNetwork(object):
 
             if h2_size > 0:
                 # value function
-                W_fc2_v = tf.get_variable(
+                W_fc2_v = tf.compat.v1.get_variable(
                             name='w2_v',
-                            initializer=tf.truncated_normal([self.h1_size, self.h2_size], stddev=0.01)
+                            initializer=tf.random.truncated_normal([self.h1_size, self.h2_size], stddev=0.01)
                           )
-                b_fc2_v = tf.get_variable(
+                b_fc2_v = tf.compat.v1.get_variable(
                             name='b2_v',
                             initializer=0.0 * tf.ones([self.h2_size])
                           )
                 h_fc2_v = tf.nn.relu(tf.matmul(h_fc1, W_fc2_v) + b_fc2_v, name='h2')
 
-                W_value = tf.get_variable(
+                W_value = tf.compat.v1.get_variable(
                             name='w3_v',
-                            initializer=tf.truncated_normal([self.h2_size, 1], stddev=0.01)
+                            initializer=tf.random.truncated_normal([self.h2_size, 1], stddev=0.01)
                           )
-                b_value = tf.get_variable(
+                b_value = tf.compat.v1.get_variable(
                             name='b3_v',
                             initializer=0.0 * tf.ones([1])
                           )
                 value = tf.matmul(h_fc2_v, W_value) + b_value
 
                 # policy function
-                W_fc2_p = tf.get_variable(
+                W_fc2_p = tf.compat.v1.get_variable(
                             name='w2_p',
-                            initializer=tf.truncated_normal([self.h1_size, self.h2_size], stddev=0.01)
+                            initializer=tf.random.truncated_normal([self.h1_size, self.h2_size], stddev=0.01)
                           )
-                b_fc2_p = tf.get_variable(
+                b_fc2_p = tf.compat.v1.get_variable(
                             name='b2_p',
                             initializer=0.0 * tf.ones([self.h2_size])
                           )
                 h_fc2_p = tf.nn.relu(tf.matmul(h_fc1, W_fc2_p) + b_fc2_p, name='h3')
 
-                W_policy = tf.get_variable(
+                W_policy = tf.compat.v1.get_variable(
                             name='w3_p',
-                            initializer=tf.truncated_normal([self.h2_size, self.a_dim], stddev=0.01)
+                            initializer=tf.random.truncated_normal([self.h2_size, self.a_dim], stddev=0.01)
                           )
-                b_policy = tf.get_variable(
+                b_policy = tf.compat.v1.get_variable(
                             name='b3_p',
                             initializer=0.0 * tf.ones([self.a_dim])
                            )
@@ -112,22 +112,22 @@ class A2CNetwork(object):
 
             else:  # 1 hidden layer
                 # value function
-                W_value = tf.get_variable(
+                W_value = tf.compat.v1.get_variable(
                             name='w2_v',
-                            initializer=tf.truncated_normal([self.h1_size, 1], stddev=0.01)
+                            initializer=tf.random.truncated_normal([self.h1_size, 1], stddev=0.01)
                           )
-                b_value = tf.get_variable(
+                b_value = tf.compat.v1.get_variable(
                             name='b2_v',
                             initializer=0.0 * tf.ones([1])
                           )
                 value = tf.matmul(h_fc1, W_value) + b_value
 
                 # policy function
-                W_policy = tf.get_variable(
+                W_policy = tf.compat.v1.get_variable(
                             name='w2_p',
-                            initializer=tf.truncated_normal([self.h1_size, self.a_dim], stddev=0.01)
+                            initializer=tf.random.truncated_normal([self.h1_size, self.a_dim], stddev=0.01)
                           )
-                b_policy = tf.get_variable(
+                b_policy = tf.compat.v1.get_variable(
                             name='b2_p',
                             initializer=0.0 * tf.ones([self.a_dim])
                            )
@@ -135,13 +135,13 @@ class A2CNetwork(object):
             
             return value, policy
 
-        with tf.variable_scope('a2c') as scope:        
+        with tf.compat.v1.variable_scope('a2c') as scope:        
             self.value_sl, self.policy_sl = build_model(self.inputs_sl)
             scope.reuse_variables()
             self.value_rl, self.policy_rl = build_model(self.inputs_rl)
 
         # all parameters
-        self.vars = tf.trainable_variables()
+        self.vars = tf.compat.v1.trainable_variables()
 
         # only policy parameters
         self.policy_vars = []
@@ -149,13 +149,13 @@ class A2CNetwork(object):
             if '_p' in i.name or 'w1' in i.name or 'b1' in i.name:
                 self.policy_vars.append(i)
 
-        with tf.variable_scope('avg_a2c') as scope:        
+        with tf.compat.v1.variable_scope('avg_a2c') as scope:        
             self.value_avg_sl, self.policy_avg_sl = build_model(self.inputs_sl)
             scope.reuse_variables()
             self.value_avg_rl, self.policy_avg_rl = build_model(self.inputs_rl)
 
         # avg network all parameters
-        self.avg_vars = tf.trainable_variables()[len(self.vars):]
+        self.avg_vars = tf.compat.v1.trainable_variables()[len(self.vars):]
 
         # only avg policy parameters
         self.avg_policy_vars = []
@@ -172,34 +172,34 @@ class A2CNetwork(object):
         # Reinforcement Learning
         #Only the worker network need ops for loss functions and gradient updating.
         self.actions_onehot = self.actions
-        self.target_v = tf.placeholder(tf.float32, [None])
-        self.advantages = tf.placeholder(tf.float32, [None])
-        self.weights = tf.placeholder(tf.float32, [None])
+        self.target_v = tf.compat.v1.placeholder(tf.float32, [None])
+        self.advantages = tf.compat.v1.placeholder(tf.float32, [None])
+        self.weights = tf.compat.v1.placeholder(tf.float32, [None])
 
         # eq. 3.3 from Jason's paper
-        self.rho_forward = tf.placeholder(tf.float32, [None])
+        self.rho_forward = tf.compat.v1.placeholder(tf.float32, [None])
 
-        self.responsible_outputs = tf.reduce_sum(self.policy_rl * self.actions_onehot, [1])
+        self.responsible_outputs = tf.reduce_sum(input_tensor=self.policy_rl * self.actions_onehot, axis=[1])
 
         #Loss functions
         self.value_diff = self.rho_forward * tf.square(self.target_v - tf.reshape(self.value_rl, [-1]))
-        self.value_loss = 0.5 * tf.reduce_sum(self.value_diff)
+        self.value_loss = 0.5 * tf.reduce_sum(input_tensor=self.value_diff)
 
         ### Policy loss with KL constraint ###
-        self.policy_diff = tf.log(self.responsible_outputs + 0.00001) * self.advantages * self.weights
-        self.policy_loss = -tf.reduce_sum(self.policy_diff)
+        self.policy_diff = tf.math.log(self.responsible_outputs + 0.00001) * self.advantages * self.weights
+        self.policy_loss = -tf.reduce_sum(input_tensor=self.policy_diff)
 
         ### KL divergence of 'policy params' and 'average policy params' ###
-        self.KL = tf.reduce_mean(-tf.nn.softmax_cross_entropy_with_logits(logits=self.policy_rl, labels=np.array(self.policy_rl)/np.array(self.policy_avg_rl)+0.00001))
+        self.KL = tf.reduce_mean(input_tensor=-tf.nn.softmax_cross_entropy_with_logits(logits=self.policy_rl, labels=tf.stop_gradient(np.array(self.policy_rl)/np.array(self.policy_avg_rl)+0.00001)))
 
-        policy_g = tf.gradients(self.policy_loss, self.policy_vars)
-        KL_k = tf.gradients(-self.KL, self.policy_vars)
+        policy_g = tf.gradients(ys=self.policy_loss, xs=self.policy_vars)
+        KL_k = tf.gradients(ys=-self.KL, xs=self.policy_vars)
 
         shapes = list(map(utils.var_shape, self.vars))
         print(shapes)
         
-        kg_dot = tf.reduce_sum([tf.reduce_sum(gp * kp) for (gp, kp) in zip(policy_g, KL_k)] )
-        kk_dot = tf.reduce_sum([tf.reduce_sum(kp * kp) for kp in KL_k])
+        kg_dot = tf.reduce_sum(input_tensor=[tf.reduce_sum(input_tensor=gp * kp) for (gp, kp) in zip(policy_g, KL_k)] )
+        kk_dot = tf.reduce_sum(input_tensor=[tf.reduce_sum(input_tensor=kp * kp) for kp in KL_k])
 
         """ No bool usage in tensorflow...
         if kk_dot > 0:
@@ -212,27 +212,27 @@ class A2CNetwork(object):
         def returnValidNum():
             return tf.maximum(tf.constant(0.0), (tf.subtract(kg_dot, self.KL_delta) / kk_dot))
     
-        k_factor = tf.cond(kk_dot > 0, returnValidNum, returnNull)
+        k_factor = tf.cond(pred=kk_dot > 0, true_fn=returnValidNum, false_fn=returnNull)
 
         z = [gp - tf.multiply(k_factor, kp) for kp, gp in zip(KL_k, policy_g)]
 
         self.policy_KL_loss = 0
         for v, zp in zip(self.policy_vars, z):
-            self.policy_KL_loss += tf.reduce_sum(v * zp)  # following from the chains rule (Wang 2016)
+            self.policy_KL_loss += tf.reduce_sum(input_tensor=v * zp)  # following from the chains rule (Wang 2016)
 
         # entropy loss
-        self.entropy = - tf.reduce_sum(self.policy_rl * tf.log(self.policy_rl+0.00001))
+        self.entropy = - tf.reduce_sum(input_tensor=self.policy_rl * tf.math.log(self.policy_rl+0.00001))
 
         # total loss
         #self.loss = 0.5 * self.value_loss + self.policy_loss - self.entropy * 0.1
         self.loss = 0.5 * self.value_loss + self.policy_KL_loss - self.entropy * 0.1
 
-        self.optimizer = tf.train.AdamOptimizer(self.learning_rate)
+        self.optimizer = tf.compat.v1.train.AdamOptimizer(self.learning_rate)
 
         # clipping
         #gvs = self.optimizer.compute_gradients(self.loss)
         #capped_gvs = [(tf.clip_by_value(grad, -3., 3.), var) for grad, var in gvs]
-        gs = tf.gradients(self.loss, self.vars)
+        gs = tf.gradients(ys=self.loss, xs=self.vars)
         capped_gvs = [(tf.clip_by_value(grad, -1., 1.), var) for grad, var in zip(gs,self.vars)]
 
         self.optimize = self.optimizer.apply_gradients(capped_gvs)
@@ -338,7 +338,7 @@ class A2CNetwork(object):
         self.sess.run(self.update_avg_policy_vars)
 
     def load_network(self, load_filename):
-        self.saver = tf.train.Saver()
+        self.saver = tf.compat.v1.train.Saver()
         try:
             self.saver.restore(self.sess, load_filename)
             print("Successfully loaded:", load_filename)
@@ -347,9 +347,9 @@ class A2CNetwork(object):
 
     def save_network(self, save_filename):
         print('Saving a2c-network...')
-        self.saver = tf.train.Saver()
+        self.saver = tf.compat.v1.train.Saver()
         self.saver.save(self.sess, save_filename)
 
     def clipped_error(self, x): 
-        return tf.where(tf.abs(x) < 1.0, 0.5 * tf.square(x), tf.abs(x) - 0.5) # condition, true, false
+        return tf.compat.v1.where(tf.abs(x) < 1.0, 0.5 * tf.square(x), tf.abs(x) - 0.5) # condition, true, false
 

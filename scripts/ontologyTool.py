@@ -305,4 +305,3 @@ if __name__ == '__main__':
         if createNewOntology(database, args.domain,args.type,args.force):
             checkOntology(args.domain)
                 
-    

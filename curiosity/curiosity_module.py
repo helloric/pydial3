@@ -17,7 +17,7 @@ from utils import Settings
 
 class Curious(object):
     def __init__(self):
-        tf.reset_default_graph()
+        tf.compat.v1.reset_default_graph()
         self.learning_rate = 0.001
         self.forward_loss_wt = 0.2
         self.feat_size = 200
@@ -28,22 +28,22 @@ class Curious(object):
         if Settings.config.has_option("eval", "feat_size"):
             self.feat_size = Settings.config.getint("eval", "feat_size")
 
-        with tf.variable_scope('curiosity', reuse=tf.AUTO_REUSE):
+        with tf.compat.v1.variable_scope('curiosity', reuse=tf.compat.v1.AUTO_REUSE):
             self.predictor = mpc.StateActionPredictor(self.num_belief_states, self.num_actions,
                                                       feature_size=self.feat_size, layer2=self.layer2)
 
             self.predloss = self.predictor.invloss * (1 - self.forward_loss_wt) + \
                             self.predictor.forwardloss * self.forward_loss_wt
 
-        self.optimizer = tf.train.AdamOptimizer(self.learning_rate)
+        self.optimizer = tf.compat.v1.train.AdamOptimizer(self.learning_rate)
         self.optimize = self.optimizer.minimize(self.predloss)
         # self.optimize = self.optimizer.minimize(self.predictor.forwardloss)  # when no feature encoding is used!
         self.cnt = 1
 
-        self.sess2 = tf.Session()
-        self.sess2.run(tf.global_variables_initializer())
-        all_variables = tf.get_collection_ref(tf.GraphKeys.GLOBAL_VARIABLES)
-        self.saver = tf.train.Saver(var_list=[v for v in all_variables if "Variab" not in v.name and "beta" not in v.name])
+        self.sess2 = tf.compat.v1.Session()
+        self.sess2.run(tf.compat.v1.global_variables_initializer())
+        all_variables = tf.compat.v1.get_collection_ref(tf.compat.v1.GraphKeys.GLOBAL_VARIABLES)
+        self.saver = tf.compat.v1.train.Saver(var_list=[v for v in all_variables if "Variab" not in v.name and "beta" not in v.name])
 
     def training(self, state_vec, prev_state_vec, action_1hot):
         _, predictionloss = self.sess2.run([self.optimize, self.predloss],

@@ -246,7 +246,7 @@ def compute_hessian(fn, vars):
         temp = []
         for v2 in vars:
             # computing derivative twice, first w.r.t v2 and then w.r.t v1
-            temp.append(tf.gradients(tf.gradients(fn, v2)[0], v1)[0])
+            temp.append(tf.gradients(ys=tf.gradients(ys=fn, xs=v2)[0], xs=v1)[0])
         temp = [tf.cons(0) if t == None else t for t in temp] # tensorflow returns None when there is no gradient, so we replace None with 0
         temp = tf.stack(temp)
         mat.append(temp)

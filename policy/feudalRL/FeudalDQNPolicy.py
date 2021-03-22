@@ -73,7 +73,7 @@ class FeudalDQNPolicy(policy.DQNPolicy.DQNPolicy):
                  action_names=None, slot=None):
         super(FeudalDQNPolicy, self).__init__(in_policy_file, out_policy_file, domainString, is_training)
 
-        tf.reset_default_graph()
+        tf.compat.v1.reset_default_graph()
 
         self.domainString = domainString
         self.domainUtil = FlatOnt.FlatDomainOntology(self.domainString)
@@ -100,11 +100,11 @@ class FeudalDQNPolicy(policy.DQNPolicy.DQNPolicy):
         self.capacity *= 4  # capacity for episode methods, multiply it to adjust to turn based methods
 
         # init session
-        self.sess = tf.Session()
+        self.sess = tf.compat.v1.Session()
         with tf.device("/cpu:0"):
 
             np.random.seed(self.randomseed)
-            tf.set_random_seed(self.randomseed)
+            tf.compat.v1.set_random_seed(self.randomseed)
 
             # initialise a replay buffer
             if self.replay_type == 'vanilla':
@@ -178,7 +178,7 @@ class FeudalDQNPolicy(policy.DQNPolicy.DQNPolicy):
                                             self.h2_size, dropout_rate=self.dropout_rate)
 
             # when all models are defined, init all variables (this might to be sent to the main policy too)
-            init_op = tf.global_variables_initializer()
+            init_op = tf.compat.v1.global_variables_initializer()
             self.sess.run(init_op)
 
             self.loadPolicy(self.in_policy_file)

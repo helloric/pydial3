@@ -52,29 +52,29 @@ class A2CNetwork(object):
         self.is_training = is_training
 
         #Input and hidden layers
-        self.inputs  = tf.placeholder(tf.float32, [None, self.s_dim])
-        self.actions = tf.placeholder(tf.float32, [None, self.a_dim])
+        self.inputs  = tf.compat.v1.placeholder(tf.float32, [None, self.s_dim])
+        self.actions = tf.compat.v1.placeholder(tf.float32, [None, self.a_dim])
 
-        W_fc1 = tf.Variable(tf.truncated_normal([self.s_dim, self.h1_size], stddev=0.01))
+        W_fc1 = tf.Variable(tf.random.truncated_normal([self.s_dim, self.h1_size], stddev=0.01))
         b_fc1 = tf.Variable(0.0 * tf.ones([self.h1_size]))
         h_fc1 = tf.nn.relu6(tf.matmul(self.inputs, W_fc1) + b_fc1)
 
         if self.h2_size > 0:
             # value function
-            W_value = tf.Variable(tf.truncated_normal([self.h1_size, self.h2_size], stddev=0.01))
+            W_value = tf.Variable(tf.random.truncated_normal([self.h1_size, self.h2_size], stddev=0.01))
             b_value = tf.Variable(0.0 * tf.ones([self.h2_size]))
             h_value = tf.nn.relu6(tf.matmul(h_fc1, W_value) + b_value)
 
-            W_value = tf.Variable(tf.truncated_normal([self.h2_size, 1], stddev=0.01))
+            W_value = tf.Variable(tf.random.truncated_normal([self.h2_size, 1], stddev=0.01))
             b_value = tf.Variable(0.0 * tf.ones([1]))
             self.value = tf.matmul(h_value, W_value) + b_value
 
             # policy function
-            W_policy = tf.Variable(tf.truncated_normal([self.h1_size, self.h2_size], stddev=0.01))
+            W_policy = tf.Variable(tf.random.truncated_normal([self.h1_size, self.h2_size], stddev=0.01))
             b_policy = tf.Variable(0.0 * tf.ones([self.h2_size]))
             h_policy = tf.nn.relu6(tf.matmul(h_fc1, W_policy) + b_policy)
 
-            W_policy = tf.Variable(tf.truncated_normal([self.h2_size, self.a_dim], stddev=0.01))
+            W_policy = tf.Variable(tf.random.truncated_normal([self.h2_size, self.a_dim], stddev=0.01))
             b_policy = tf.Variable(0.0 * tf.ones([self.a_dim]))
 
             # prevent problem when calling log(self.policy)
@@ -88,12 +88,12 @@ class A2CNetwork(object):
 
         else:  # 1 hidden layer
             # value function
-            W_value = tf.Variable(tf.truncated_normal([self.h1_size, 1], stddev=0.01))
+            W_value = tf.Variable(tf.random.truncated_normal([self.h1_size, 1], stddev=0.01))
             b_value = tf.Variable(0.0 * tf.ones([1]))
             self.value = tf.matmul(h_fc1, W_value) + b_value
 
             # policy function
-            W_policy = tf.Variable(tf.truncated_normal([self.h1_size, self.a_dim], stddev=0.01))
+            W_policy = tf.Variable(tf.random.truncated_normal([self.h1_size, self.a_dim], stddev=0.01))
             b_policy = tf.Variable(0.0 * tf.ones([self.a_dim]))
 
             # prevent problem when calling log(self.policy)
@@ -106,39 +106,39 @@ class A2CNetwork(object):
                 self.policy = tf.nn.softmax(tf.matmul(h_fc1, W_policy) + b_policy) + 0.00001
 
         # all parameters
-        self.vars = tf.trainable_variables()
+        self.vars = tf.compat.v1.trainable_variables()
 
         # Reinforcement Learning
         #Only the worker network need ops for loss functions and gradient updating.
         self.actions_onehot = self.actions
-        self.target_v = tf.placeholder(tf.float32, [None])
-        self.advantages = tf.placeholder(tf.float32, [None])
-        self.weights = tf.placeholder(tf.float32, [None])
+        self.target_v = tf.compat.v1.placeholder(tf.float32, [None])
+        self.advantages = tf.compat.v1.placeholder(tf.float32, [None])
+        self.weights = tf.compat.v1.placeholder(tf.float32, [None])
 
         # eq. 3.3 from Jason's paper
-        self.rho_forward = tf.placeholder(tf.float32, [None])
+        self.rho_forward = tf.compat.v1.placeholder(tf.float32, [None])
         #self.rho_whole = tf.placeholder(tf.float32, [None])
 
-        self.responsible_outputs = tf.reduce_sum(self.policy * self.actions_onehot, [1])
+        self.responsible_outputs = tf.reduce_sum(input_tensor=self.policy * self.actions_onehot, axis=[1])
 
         #Loss functions
         self.value_diff = self.rho_forward * tf.square(self.target_v - tf.reshape(self.value, [-1]))
         #self.value_diff = self.clipped_error(self.value_diff)
         self.value_diff = tf.clip_by_value(self.value_diff, -2, 2)
-        self.value_loss = 0.5 * tf.reduce_sum(self.value_diff)
+        self.value_loss = 0.5 * tf.reduce_sum(input_tensor=self.value_diff)
 
-        self.policy_diff = tf.log(self.responsible_outputs) * self.advantages * self.weights
+        self.policy_diff = tf.math.log(self.responsible_outputs) * self.advantages * self.weights
         #self.policy_diff = self.clipped_error(self.policy_diff)
         self.policy_diff = tf.clip_by_value(self.policy_diff, -20, 20)
-        self.policy_loss = -tf.reduce_sum(self.policy_diff)
+        self.policy_loss = -tf.reduce_sum(input_tensor=self.policy_diff)
 
-        self.entropy = - tf.reduce_sum(self.policy * tf.log(self.policy))
+        self.entropy = - tf.reduce_sum(input_tensor=self.policy * tf.math.log(self.policy))
         #self.loss = 0.5 * self.value_loss + self.policy_loss - self.entropy * 0.01
 
         self.loss = 0.5 * self.value_loss + self.policy_loss - self.entropy * 0.1
 
 
-        self.optimizer = tf.train.AdamOptimizer(self.learning_rate)
+        self.optimizer = tf.compat.v1.train.AdamOptimizer(self.learning_rate)
 
         # add clipping too!
         # clipping
@@ -151,26 +151,26 @@ class A2CNetwork(object):
         ############################
         # Supervised Learning
         ############################
-        self.policy_y = tf.placeholder(tf.int64, [None])
+        self.policy_y = tf.compat.v1.placeholder(tf.int64, [None])
         self.policy_y_one_hot = tf.one_hot(self.policy_y, self.a_dim, 1.0, 0.0, name='policy_y_one_hot')
 
-        self.loss_sl = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=self.policy, labels=self.policy_y_one_hot))
+        self.loss_sl = tf.reduce_mean(input_tensor=tf.nn.softmax_cross_entropy_with_logits(logits=self.policy, labels=tf.stop_gradient(self.policy_y_one_hot)))
         
         self.lossL2 = tf.add_n([tf.nn.l2_loss(v) for v in self.vars
                                 if 'bias' not in v.name]) * 0.001
 
         self.loss_combined = self.loss_sl + self.lossL2
 
-        self.optimizer_sl = tf.train.AdamOptimizer(self.learning_rate)
+        self.optimizer_sl = tf.compat.v1.train.AdamOptimizer(self.learning_rate)
         self.optimize_sl = self.optimizer_sl.minimize(self.loss_combined)
 
-        self.policy_picked = tf.argmax(self.policy,1)
+        self.policy_picked = tf.argmax(input=self.policy,axis=1)
 
-        correct_prediction = tf.equal(tf.argmax(self.policy,1), self.policy_y)
-        self.accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+        correct_prediction = tf.equal(tf.argmax(input=self.policy,axis=1), self.policy_y)
+        self.accuracy = tf.reduce_mean(input_tensor=tf.cast(correct_prediction, tf.float32))
 
         #self.params = tf.trainable_variables()
-        self.params = [v.name for v in tf.trainable_variables()]
+        self.params = [v.name for v in tf.compat.v1.trainable_variables()]
         ############################
         ############################
 
@@ -180,7 +180,7 @@ class A2CNetwork(object):
         ############################
         self.loss_all = self.loss + self.loss_sl
 
-        self.optimizer_all = tf.train.AdamOptimizer(self.learning_rate)
+        self.optimizer_all = tf.compat.v1.train.AdamOptimizer(self.learning_rate)
 
         # clipping
         gvs = self.optimizer_all.compute_gradients(self.loss_all)
@@ -265,7 +265,7 @@ class A2CNetwork(object):
         })
 
     def load_network(self, load_filename):
-        self.saver = tf.train.Saver()
+        self.saver = tf.compat.v1.train.Saver()
         if load_filename.split('.')[-3] != '0':
             try:
                 self.saver.restore(self.sess, load_filename)
@@ -277,9 +277,9 @@ class A2CNetwork(object):
 
     def save_network(self, save_filename):
         print('Saving a2c-network... ', save_filename)
-        self.saver = tf.train.Saver()
+        self.saver = tf.compat.v1.train.Saver()
         self.saver.save(self.sess, save_filename)
 
     def clipped_error(self, x): 
-        return tf.where(tf.abs(x) < 1.0, 0.5 * tf.square(x), tf.abs(x) - 0.5) # condition, true, false
+        return tf.compat.v1.where(tf.abs(x) < 1.0, 0.5 * tf.square(x), tf.abs(x) - 0.5) # condition, true, false
 

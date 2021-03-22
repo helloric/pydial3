@@ -57,18 +57,18 @@ class DeepQNetwork(object):
         self.minibatch_size = minibatch_size
 
         self.keep_prob = tf.Variable(p_start, dtype=tf.float32, name="dropout")
-        self.flag = tf.placeholder(tf.float32)
+        self.flag = tf.compat.v1.placeholder(tf.float32)
 
         # Create the deep Q network
         self.inputs, self.action, self.Qout = \
                         self.create_ddq_network(self.architecture, self.h1_size, self.h2_size)
 
-        self.network_params = tf.trainable_variables()[1:]  # without dropout parameter
+        self.network_params = tf.compat.v1.trainable_variables()[1:]  # without dropout parameter
 
         # Target Network
         self.target_inputs, self.target_action, self.target_Qout = \
                         self.create_ddq_network(self.architecture, self.h1_size, self.h2_size)
-        self.target_network_params = tf.trainable_variables()[len(self.network_params ) +  1:]
+        self.target_network_params = tf.compat.v1.trainable_variables()[len(self.network_params ) +  1:]
 
         # Op for periodically updating target network
         self.update_target_network_params = \
@@ -77,35 +77,35 @@ class DeepQNetwork(object):
                 for i in range(len(self.target_network_params))]
 
         # Network target (y_i)
-        self.sampled_q = tf.placeholder(tf.float32, [None, 1])
+        self.sampled_q = tf.compat.v1.placeholder(tf.float32, [None, 1])
 
         # Predicted Q given state and chosen action
         actions_one_hot = self.action
-        self.pred_q = tf.reshape(tf.reduce_sum(self.Qout * actions_one_hot, axis=1, name='q_acted'),
+        self.pred_q = tf.reshape(tf.reduce_sum(input_tensor=self.Qout * actions_one_hot, axis=1, name='q_acted'),
                                  [self.minibatch_size, 1])
 
         # Define loss and optimization Op
         self.diff = self.sampled_q - self.pred_q
 
         # TODO  what Matrix here?
-        self.weight_reg = tf.reduce_sum(tf.square(self.network_params[1])) / (1. - self.keep_prob)
+        self.weight_reg = tf.reduce_sum(input_tensor=tf.square(self.network_params[1])) / (1. - self.keep_prob)
         # TODO input dim is correct?
-        self.drop_reg = tf.reduce_sum(self.keep_prob * tf.log(self.keep_prob) + (1. - self.keep_prob) * tf.log(1. - self.keep_prob)) * 130
+        self.drop_reg = tf.reduce_sum(input_tensor=self.keep_prob * tf.math.log(self.keep_prob) + (1. - self.keep_prob) * tf.math.log(1. - self.keep_prob)) * 130
 
-        self.N = tf.placeholder(tf.float32, None)  # episode count
-        self.KL = tf.reduce_sum(self.weight_reg * weight_regularizer + self.drop_reg * dropout_regularizer)
+        self.N = tf.compat.v1.placeholder(tf.float32, None)  # episode count
+        self.KL = tf.reduce_sum(input_tensor=self.weight_reg * weight_regularizer + self.drop_reg * dropout_regularizer)
         self.KL /= self.N
 
-        self.loss = tf.reduce_mean(self.clipped_error(self.diff), name='loss') + self.KL
+        self.loss = tf.reduce_mean(input_tensor=self.clipped_error(self.diff), name='loss') + self.KL
 
-        self.optimizer = tf.train.AdamOptimizer(self.learning_rate)
+        self.optimizer = tf.compat.v1.train.AdamOptimizer(self.learning_rate)
         self.optimize = self.optimizer.minimize(self.loss)
 
     def create_ddq_network(self, architecture='duel', h1_size=130, h2_size=50):
-        inputs = tf.placeholder(tf.float32, [None, self.s_dim])
-        action = tf.placeholder(tf.float32, [None, self.a_dim])
+        inputs = tf.compat.v1.placeholder(tf.float32, [None, self.s_dim])
+        action = tf.compat.v1.placeholder(tf.float32, [None, self.a_dim])
 
-        W_fc1 = tf.Variable(tf.truncated_normal([self.s_dim, h1_size], stddev=0.01))
+        W_fc1 = tf.Variable(tf.random.truncated_normal([self.s_dim, h1_size], stddev=0.01))
         b_fc1 = tf.Variable(tf.zeros([h1_size]))
         h_fc1 = tf.nn.relu(tf.matmul(inputs, W_fc1) + b_fc1)
 
@@ -113,32 +113,32 @@ class DeepQNetwork(object):
 
         if architecture == 'duel':
             # value function
-            W_value = tf.Variable(tf.truncated_normal([h1_size, h2_size], stddev=0.01))
+            W_value = tf.Variable(tf.random.truncated_normal([h1_size, h2_size], stddev=0.01))
             b_value = tf.Variable(tf.zeros([h2_size]))
             h_value = tf.nn.relu(tf.matmul(h_fc1_drop, W_value) + b_value)
 
-            W_value = tf.Variable(tf.truncated_normal([h2_size, 1], stddev=0.01))
+            W_value = tf.Variable(tf.random.truncated_normal([h2_size, 1], stddev=0.01))
             b_value = tf.Variable(tf.zeros([1]))
             value_out = tf.matmul(h_value, W_value) + b_value
 
             # advantage function
-            W_advantage = tf.Variable(tf.truncated_normal([h1_size, h2_size], stddev=0.01))
+            W_advantage = tf.Variable(tf.random.truncated_normal([h1_size, h2_size], stddev=0.01))
             b_advantage = tf.Variable(tf.zeros([h2_size]))
             h_advantage = tf.nn.relu(tf.matmul(h_fc1, W_advantage) + b_advantage)
 
-            W_advantage = tf.Variable(tf.truncated_normal([h2_size, self.a_dim], stddev=0.01))
+            W_advantage = tf.Variable(tf.random.truncated_normal([h2_size, self.a_dim], stddev=0.01))
             b_advantage = tf.Variable(tf.zeros([self.a_dim]))
             Advantage_out = tf.matmul(h_advantage, W_advantage) + b_advantage
 
-            Qout = value_out + (Advantage_out - tf.reduce_mean(Advantage_out, reduction_indices=1, keep_dims=True))
+            Qout = value_out + (Advantage_out - tf.reduce_mean(input_tensor=Advantage_out, axis=1, keepdims=True))
 
         else:
-            W_fc2 = tf.Variable(tf.truncated_normal([h1_size, h2_size], stddev=0.01))
+            W_fc2 = tf.Variable(tf.random.truncated_normal([h1_size, h2_size], stddev=0.01))
             b_fc2 = tf.Variable(tf.zeros([h2_size]))
             h_fc2 = tf.nn.relu(tf.matmul(h_fc1_drop, W_fc2) + b_fc2)
             #h_fc2_drop = tf.nn.dropout(h_fc2, keep_prob)
 
-            W_out = tf.Variable(tf.truncated_normal([h2_size, self.a_dim], stddev=0.01))
+            W_out = tf.Variable(tf.random.truncated_normal([h2_size, self.a_dim], stddev=0.01))
             b_out = tf.Variable(tf.zeros([self.a_dim]))
             #Qout  = tf.matmul(h_fc2_drop, W_out) + b_out
             Qout  = tf.matmul(h_fc2, W_out) + b_out
@@ -155,7 +155,7 @@ class DeepQNetwork(object):
         eps = 9.99999975e-04
         temp = 1.0 / 10.0
         unif_noise = np.random.uniform(size=x.get_shape()[0].value)
-        drop_prob = tf.log(self.keep_prob + eps) - tf.log(1. - self.keep_prob + eps) + tf.log(unif_noise + eps) - tf.log(
+        drop_prob = tf.math.log(self.keep_prob + eps) - tf.math.log(1. - self.keep_prob + eps) + tf.math.log(unif_noise + eps) - tf.math.log(
             1. - unif_noise + eps)
 
         drop_prob = tf.sigmoid(drop_prob / temp)
@@ -206,7 +206,7 @@ class DeepQNetwork(object):
         self.sess.run(self.update_target_network_params)
 
     def load_network(self, load_filename):
-        self.saver = tf.train.Saver()
+        self.saver = tf.compat.v1.train.Saver()
         try:
             self.saver.restore(self.sess, './' + load_filename)
             print("Successfully loaded:", load_filename)
@@ -218,7 +218,7 @@ class DeepQNetwork(object):
         self.saver.save(self.sess, './' + save_filename)
 
     def clipped_error(self, x):
-        return tf.where(tf.abs(x) < 1.0, 0.5 * tf.square(x), tf.abs(x) - 0.5)  # condition, true, false
+        return tf.compat.v1.where(tf.abs(x) < 1.0, 0.5 * tf.square(x), tf.abs(x) - 0.5)  # condition, true, false
 
 
 

@@ -133,7 +133,7 @@ class BBQNPolicy(Policy.Policy):
     def __init__(self, in_policy_file, out_policy_file, domainString='CamRestaurants', is_training=False):
         super(BBQNPolicy, self).__init__(domainString, is_training)
 
-        tf.reset_default_graph()
+        tf.compat.v1.reset_default_graph()
 
         self.domainString = domainString
         self.domainUtil = FlatOnt.FlatDomainOntology(self.domainString)
@@ -424,11 +424,11 @@ class BBQNPolicy(Policy.Policy):
         os.environ["CUDA_VISIBLE_DEVICES"] = ""
 
         # init session
-        self.sess = tf.Session()
+        self.sess = tf.compat.v1.Session()
         with tf.device("/cpu:0"):
 
             np.random.seed(self.randomseed)
-            tf.set_random_seed(self.randomseed)
+            tf.compat.v1.set_random_seed(self.randomseed)
 
             # initialise an replay buffer
             if self.replay_type == 'vanilla':
@@ -457,7 +457,7 @@ class BBQNPolicy(Policy.Policy):
             self.BBQN = BBQN.DeepQNetwork(self.sess, self.state_dim, self.action_dim, self.learning_rate, self.tau, action_bound, self.architecture, self.h1_size, self.h2_size, self.n_samples, self.minibatch_size, self.sigma_prior, self.n_batches, self.stddev_var_mu,  self.stddev_var_logsigma, self.mean_log_sigma, self.importance_sampling, self.alpha_divergence, self.alpha, self.sigma_eps)
 
             # when all models are defined, init all variables
-            init_op = tf.global_variables_initializer()
+            init_op = tf.compat.v1.global_variables_initializer()
             self.sess.run(init_op)
 
             self.loadPolicy(self.in_policy_file)

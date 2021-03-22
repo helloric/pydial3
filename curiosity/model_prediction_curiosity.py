@@ -78,15 +78,15 @@ def flatten(x):
 
 def cosineLoss(A, B, name):
     ''' A, B : (BatchSize, d) '''
-    dotprod = tf.reduce_sum(tf.multiply(tf.nn.l2_normalize(A, 1), tf.nn.l2_normalize(B, 1)), 1)
-    loss = 1-tf.reduce_mean(dotprod, name=name)
+    dotprod = tf.reduce_sum(input_tensor=tf.multiply(tf.nn.l2_normalize(A, 1), tf.nn.l2_normalize(B, 1)), axis=1)
+    loss = 1-tf.reduce_mean(input_tensor=dotprod, name=name)
     return loss
 
 
 def linear(x, size, name, initializer=None, bias_init=0):
-    with tf.variable_scope(name, reuse=tf.AUTO_REUSE):
-        w = tf.get_variable("w", [x.get_shape()[1], size], initializer=initializer) # error in second turn, reuse variable?
-        b = tf.get_variable("b", [size], initializer=tf.constant_initializer(bias_init)) #changed from: name+ "/b"
+    with tf.compat.v1.variable_scope(name, reuse=tf.compat.v1.AUTO_REUSE):
+        w = tf.compat.v1.get_variable("w", [x.get_shape()[1], size], initializer=initializer) # error in second turn, reuse variable?
+        b = tf.compat.v1.get_variable("b", [size], initializer=tf.compat.v1.constant_initializer(bias_init)) #changed from: name+ "/b"
         # initialized now to fix error
     return tf.matmul(x, w) + b
 
@@ -124,15 +124,15 @@ class StateActionPredictor(object):
         else:
             input_shape = [None] + list(ob_space)
 
-        self.s1 = phi1 = tf.placeholder(tf.float32, input_shape)
-        self.s2 = phi2 = tf.placeholder(tf.float32, input_shape)
-        self.asample = asample = tf.placeholder(tf.float32, [None, ac_space])
+        self.s1 = phi1 = tf.compat.v1.placeholder(tf.float32, input_shape)
+        self.s2 = phi2 = tf.compat.v1.placeholder(tf.float32, input_shape)
+        self.asample = asample = tf.compat.v1.placeholder(tf.float32, [None, ac_space])
 
         # feature encoding: phi1, phi2: [None, LEN]
         size = feature_size  # 268 for full believstate
         if designHead == 'pydial':
             phi1 = pydialHead(phi1, self.layer2)
-            with tf.variable_scope(tf.get_variable_scope(), reuse=True):
+            with tf.compat.v1.variable_scope(tf.compat.v1.get_variable_scope(), reuse=True):
                 phi2 = pydialHead(phi2, self.layer2)
         else:
             print('So far "pydial" is the only available design head. Please check your configurations.')
@@ -140,9 +140,9 @@ class StateActionPredictor(object):
         # inverse model: g(phi1,phi2) -> a_inv: [None, ac_space]
         g = tf.concat([phi1, phi2], 1)   # changed place of 1
         g = tf.nn.relu(linear(g, size, "g1", normalized_columns_initializer(0.01)))
-        aindex = tf.argmax(asample, axis=1)  # aindex: [batch_size,]
+        aindex = tf.argmax(input=asample, axis=1)  # aindex: [batch_size,]
         logits = linear(g, ac_space, "glast", normalized_columns_initializer(0.01))
-        self.invloss = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=aindex), name="invloss")
+        self.invloss = tf.reduce_mean(input_tensor=tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=aindex), name="invloss")
         self.ainvprobs = tf.nn.softmax(logits, axis=-1)
 
         # forward model: f(phi1,asample) -> phi2

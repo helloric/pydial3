@@ -81,16 +81,16 @@ def unison_shuffled_copies(vec1, vec2, vec3, vec4):
     return np.array(vec1)[p], np.array(vec2)[p], np.array(vec3)[p], np.array(vec4)[p]
 
 
-with tf.variable_scope('curiosity'):
+with tf.compat.v1.variable_scope('curiosity'):
     predictor = mpc.StateActionPredictor(num_belief_states, num_actions, designHead='pydial', feature_size=feature_size)
     predloss = predictor.invloss * (1 - forward_loss_wt) + predictor.forwardloss * forward_loss_wt
 
-optimizer = tf.train.AdamOptimizer(learning_rate)
+optimizer = tf.compat.v1.train.AdamOptimizer(learning_rate)
 optimize = optimizer.minimize(predloss)
 
-sess = tf.Session()
-sess.run(tf.global_variables_initializer())
-saver = tf.train.Saver()
+sess = tf.compat.v1.Session()
+sess.run(tf.compat.v1.global_variables_initializer())
+saver = tf.compat.v1.train.Saver()
 
 # read data from files
 t, a = read_data1(action_pre_trg)

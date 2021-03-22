@@ -138,7 +138,7 @@ class DQNPolicy(Policy.Policy):
     def __init__(self, in_policy_file, out_policy_file, domainString='CamRestaurants', is_training=False, action_names=None):
         super(DQNPolicy, self).__init__(domainString, is_training)
 
-        tf.reset_default_graph()
+        tf.compat.v1.reset_default_graph()
 
         self.domainString = domainString
         self.domainUtil = FlatOnt.FlatDomainOntology(self.domainString)
@@ -371,12 +371,12 @@ class DQNPolicy(Policy.Policy):
         if utils.Settings.config.has_option('policy', 'policytype'):
             policytype = utils.Settings.config.get('policy', 'policytype')
         if policytype != 'feudal':
-            self.sess = tf.Session()
+            self.sess = tf.compat.v1.Session()
 
             with tf.device("/cpu:0"):
 
                 np.random.seed(self.randomseed)
-                tf.set_random_seed(self.randomseed)
+                tf.compat.v1.set_random_seed(self.randomseed)
 
                 # initialise an replay buffer
                 if self.replay_type == 'vanilla':
@@ -406,7 +406,7 @@ class DQNPolicy(Policy.Policy):
                                             self.h2_size, dropout_rate=self.dropout_rate)
 
                 # when all models are defined, init all variables
-                init_op = tf.global_variables_initializer()
+                init_op = tf.compat.v1.global_variables_initializer()
                 self.sess.run(init_op)
 
                 self.loadPolicy(self.in_policy_file)

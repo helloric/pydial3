@@ -305,11 +305,11 @@ class DropoutDQNPolicy(Policy.Policy):
         os.environ["CUDA_VISIBLE_DEVICES"] = ""
 
         # init session
-        self.sess = tf.Session()
+        self.sess = tf.compat.v1.Session()
         with tf.device("/cpu:0"):
 
             np.random.seed(self.randomseed)
-            tf.set_random_seed(self.randomseed)
+            tf.compat.v1.set_random_seed(self.randomseed)
 
             # initialise an replay buffer
             if self.replay_type == 'vanilla':
@@ -334,7 +334,7 @@ class DropoutDQNPolicy(Policy.Policy):
                                         self.h2_size, self.minibatch_size)
 
             # when all models are defined, init all variables
-            init_op = tf.global_variables_initializer()
+            init_op = tf.compat.v1.global_variables_initializer()
             self.sess.run(init_op)
 
             self.loadPolicy(self.in_policy_file)
